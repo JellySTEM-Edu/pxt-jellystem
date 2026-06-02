@@ -157,7 +157,7 @@ namespace jellystem {
     * @param speed - The speed at which the motor. eg: 0--100
     */
     //% group="Motors"
-    //% block="set %motor %direction speed %speed\\%"
+    //% block="set %motor %direction speed %speed%%"
     //% speed.min=0 speed.max=100
     //% speed.defl=0
     //% weight=380
@@ -191,7 +191,7 @@ namespace jellystem {
      * @param m2Speed - Set the speed and direction of the right motor.
      */
     //% group="Motors"
-    //% block="set motor1 speed %m1Speed\\% motor2 speed %m2Speed\\%"
+    //% block="set motor1 speed %m1Speed%% motor2 speed %m2Speed%%"
     //% m1Speed.min=-100 m1Speed.max=100
     //% m2Speed.min=-100 m2Speed.max=100
     //% weight=379
@@ -219,8 +219,7 @@ namespace jellystem {
         pins.i2cWriteBuffer(i2cAddr, i2cBuffer);
     }
 
-    /** 
-     * Motors stop.
+    /** * Motors stop.
      * @param motor - The motors of mShield.
      */
     //% group="Motors"
@@ -243,8 +242,7 @@ namespace jellystem {
         }
     }
 
-    /** 
-     * Motors brake.
+    /** * Motors brake.
      * @param motor - The motors of mShield.
      */
     //% group="Motors"
@@ -267,12 +265,11 @@ namespace jellystem {
         }
     }
 
-    /** 
-     * Motors speed calibration.
+    /** * Motors speed calibration.
      * When the speed of the left and right motors of the mShield trolley is not consistent,
      * this function can adjust the speed of the motor and save it permanently.
      * @param offset1 - Motor1 offset. eg: -10--0
-     * @param offset1 - Motor2 offset. eg: -10--0
+     * @param offset2 - Motor2 offset. eg: -10--0
      */
     //% group="Motors"
     //% weight=376
@@ -302,7 +299,7 @@ namespace jellystem {
     * @param onOff - Turn LED on or off.
     */
     //% group="LEDs"
-    //% block="set %led state $onOff"
+    //% block="set %led state %onOff"
     //% weight=370
     //% onOff.shadow=toggleOnOff
     export function setLed(led: Leds, onOff: boolean) {
@@ -335,9 +332,6 @@ namespace jellystem {
     function irCode(): number {
         return 0;
     }
-
-    //const IR_EVENT_SOURCE = 5299
-    //const IR_EVENT_VALUE  = 3500
     
     /**
       * Run code when a button is pressed on the IR remote.
@@ -346,24 +340,13 @@ namespace jellystem {
     //% weight=360
     //% block="on IR receiving"
     export function irCallBack(handler: () => void) {
-        // handler is the functional argument to the irCallback function and is the block
-        // to be executed inside the irCallback function generation block.
         pins.setPull(DigitalPin.P12, PinPullMode.PullUp)
-
-        // https://github.com/lancaster-university/codal-core/blob/8c8366f9a1e92da69f90fe816456c4b9c42ffd13/inc/core/CodalComponent.h#L85
-        // A trigger event is registered, and handler is the function to execute to trigger the event.
-        //control.onEvent(IR_EVENT_SOURCE, IR_EVENT_VALUE, handler)
 
         control.inBackground(() => {
             while (true) {
-                // irVal = 8-bit command + 8-bit command inverse code
                 irVal = irCode()
                 if (irVal > 0xff) {
-                    // Call the handler function directly.
                     handler()  
-
-                    // Triggers the event, which fires the event registered above (control.onEvent()).
-                    //control.raiseEvent(IR_EVENT_SOURCE, IR_EVENT_VALUE, EventCreationMode.CreateAndFire)
                 }
                 basic.pause(20)
             }
@@ -493,7 +476,7 @@ namespace jellystem {
      */
     //% group="PWM port"
     //% weight=347
-    //% block="set %index 360° servo speed to %speed\\%"
+    //% block="set %index 360° servo speed to %speed%%"
     //% speed.min=-100 speed.max=100
     //% speed.defl=0
     export function continuousServoControl(index: PwmAndServoIndex, speed: number): void {
