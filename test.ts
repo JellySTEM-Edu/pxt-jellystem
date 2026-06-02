@@ -1,1 +1,1 @@
-jellystem.testBlock()
+jellystem.setMotorsSpeed(50, 50)
