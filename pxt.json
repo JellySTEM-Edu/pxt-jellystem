@@ -1,21 +1,25 @@
 {
-  "name": "jellystem",
-  "version": "0.0.1",
-  "description": "MakeCode extension for JellySTEM micro:bit projects, including motors, sensors, lights, robotics, boats, and classroom kits.",
-  "license": "MIT",
-  "dependencies": {
-    "core": "*"
-  },
-  "files": [
-    "main.ts",
-    "README.md"
-  ],
-  "testFiles": [
-    "test.ts"
-  ],
-  "public": true,
-  "supportedTargets": [
-    "microbit"
-  ],
-  "preferredEditor": "tsprj"
+    "name": "jellystem",
+    "version": "0.0.1",
+    "description": "MakeCode extension for JellySTEM micro:bit projects, including motors, sensors, lights, robotics, boats, and classroom kits.",
+    "license": "MIT",
+    "dependencies": {
+        "core": "*",
+        "microphone": "*"
+    },
+    "files": [
+        "main.ts",
+        "README.md",
+        "IR.cpp",
+        "shims.d.ts",
+        "enums.d.ts"
+    ],
+    "testFiles": [
+        "test.ts"
+    ],
+    "public": true,
+    "supportedTargets": [
+        "microbit"
+    ],
+    "preferredEditor": "tsprj"
 }
