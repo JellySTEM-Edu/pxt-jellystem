@@ -1,7 +1,18 @@
 /*
-* This extension library includes core blocks adapted from the SIYEENOVE team.
-* Original Copyright (c) 2024 SIYEENOVA under the MIT License.
-* Rebranded and adapted for JellySTEM Education.
+* JellySTEM MakeCode extension
+*
+* This extension includes or adapts code from:
+* Siyeenove mShield MakeCode extension
+* http://github.com/siyeenove/pxt_mshield
+*
+* Original copyright:
+* Copyright (c) 2024 SIYEENOVA
+*
+* Original license: MIT License
+*
+* JellySTEM modifications:
+* Copyright (c) 2026 JellySTEM / IMADE3D
+* Released under the MIT License.
 */
 
 //% weight=100 color=#3CB371 icon="\uf1b2" block="JellySTEM"
