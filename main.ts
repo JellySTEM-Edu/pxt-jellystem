@@ -177,7 +177,7 @@ namespace jellystem {
     * @param speed - The speed at which the motor. eg: 0--100
     */
     //% group="Motors"
-    //% block="set %motor %direction speed %speed%%"
+    //% block="set %motor %direction speed %speed\\%"
     //% speed.min=0 speed.max=100
     //% speed.defl=0
     //% weight=380
@@ -202,7 +202,7 @@ namespace jellystem {
      * @param m2Speed - Set the speed and direction of the right motor.
      */
     //% group="Motors"
-    //% block="set motor1 speed %m1Speed%% motor2 speed %m2Speed%%"
+    //% block="set motor1 speed %m1Speed\\% motor2 speed %m2Speed\\%"
     //% m1Speed.min=-100 m1Speed.max=100
     //% m2Speed.min=-100 m2Speed.max=100
     //% weight=379
@@ -269,7 +269,7 @@ namespace jellystem {
      */
     //% group="Motors"
     //% weight=376
-    //%block="motors speed offset: motor1 %offset1 motor2 %offset2"
+    //% block="trim motor speed: M1 %offset1 M2 %offset2"
     //% offset1.min=-10 offset1.max=0
     //% offset2.min=-10 offset2.max=0
     //% offset1.defl=0 offset2.defl=0
@@ -371,7 +371,7 @@ namespace jellystem {
      */
     //% group="PWM port"
     //% weight=349
-    //% block="set %index PWM pluse width is %pulseWidth"
+    //% block="set %index PWM pulse width to %pulseWidth"
     //% pulseWidth.min=0 pulseWidth.max=200
     //% pulseWidth.defl=0
     export function extendPwmControl(index: PwmAndServoIndex, pulseWidth: number): void {
@@ -417,7 +417,7 @@ namespace jellystem {
      */
     //% group="PWM port"
     //% weight=347
-    //% block="set %index 360° servo speed to %speed%%"
+    //% block="set %index 360° servo speed to %speed\\%"
     //% speed.min=-100 speed.max=100
     //% speed.defl=0
     export function continuousServoControl(index: PwmAndServoIndex, speed: number): void {
