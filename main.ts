@@ -6,14 +6,6 @@
 
 //% weight=100 color=#3CB371 icon="\uf1b2" block="JellySTEM"
 namespace jellystem {
-    /**
-     * Test block for the first MakeCode extension check.
-     */
-    //% block="JellySTEM test block"
-    export function testBlock(): void {
-        basic.showIcon(IconNames.Yes)
-    }
-
     export enum MotorsDirection {
         //%block="clockwise"
         CC = 1,
@@ -162,28 +154,20 @@ namespace jellystem {
     //% speed.defl=0
     //% weight=380
     export function setMotorsDirectionSpeed(motor: Motors, direction: MotorsDirection, speed: number): void {
-        let i2cBuffer = pins.createBuffer(2)
+        // Defensive coding: clamp the speed between 0 and 100
+        speed = Math.max(0, Math.min(100, speed));
         
         if (motor == Motors.Motor1 || motor == Motors.AllMotors) {
             motor1Speed = speed;
-            i2cBuffer[0] = 0x09;
-            if (direction == MotorsDirection.CC)         //clockwise
-                i2cBuffer[1] = motor1Speed;
-            else if (direction == MotorsDirection.CCW)   //counterclockwise
-                i2cBuffer[1] = motor1Speed + 101;
-            pins.i2cWriteBuffer(i2cAddr, i2cBuffer);
+            let value = (direction == MotorsDirection.CC) ? motor1Speed : motor1Speed + 101;
+            writeReg2Bytes(0x09, value);
         }
         if (motor == Motors.Motor2 || motor == Motors.AllMotors) {
             motor2Speed = speed;
-            i2cBuffer[0] = 0x0a;
-            if (direction == MotorsDirection.CC)          //clockwise
-                i2cBuffer[1] = motor2Speed;
-            else if (direction == MotorsDirection.CCW)    //counterclockwise
-                i2cBuffer[1] = motor2Speed + 101;
-            pins.i2cWriteBuffer(i2cAddr, i2cBuffer)
+            let value = (direction == MotorsDirection.CC) ? motor2Speed : motor2Speed + 101;
+            writeReg2Bytes(0x0a, value);
         }
     }
-
 
     /**
      * Set the speed and direction of the motor.
@@ -196,27 +180,25 @@ namespace jellystem {
     //% m2Speed.min=-100 m2Speed.max=100
     //% weight=379
     export function setMotorsSpeed(m1Speed: number, m2Speed: number): void {
-        let i2cBuffer = pins.createBuffer(2)
+        // Defensive coding: clamp inputs to explicit limits
+        m1Speed = Math.max(-100, Math.min(100, m1Speed));
+        m2Speed = Math.max(-100, Math.min(100, m2Speed));
         
-        i2cBuffer[0] = 0x09;
         if (m1Speed > 0){
             motor1Speed = m1Speed;
-            i2cBuffer[1] = motor1Speed;
-        }else{
+            writeReg2Bytes(0x09, motor1Speed);
+        } else {
             motor1Speed = Math.abs(m1Speed);
-            i2cBuffer[1] = motor1Speed + 101;
+            writeReg2Bytes(0x09, motor1Speed + 101);
         }
-        pins.i2cWriteBuffer(i2cAddr, i2cBuffer);
 
-        i2cBuffer[0] = 0x0a;
         if (m2Speed > 0){
             motor2Speed = m2Speed;
-            i2cBuffer[1] = motor2Speed;
-        }else{
+            writeReg2Bytes(0x0a, motor2Speed);
+        } else {
             motor2Speed = Math.abs(m2Speed);
-            i2cBuffer[1] = motor2Speed + 101;
+            writeReg2Bytes(0x0a, motor2Speed + 101);
         }
-        pins.i2cWriteBuffer(i2cAddr, i2cBuffer);
     }
 
     /** * Motors stop.
@@ -226,19 +208,13 @@ namespace jellystem {
     //% weight=378
     //%block="set %motor to stop"
     export function wheelStop(motor: Motors): void {
-        let i2cBuffer = pins.createBuffer(2)
-
         if (motor == Motors.Motor1 || motor == Motors.AllMotors) {
             motor1Speed = 0;
-            i2cBuffer[0] = 0x09;
-            i2cBuffer[1] = motor1Speed;
-            pins.i2cWriteBuffer(i2cAddr, i2cBuffer);
+            writeReg2Bytes(0x09, 0);
         }
         if (motor == Motors.Motor2 || motor == Motors.AllMotors) {
             motor2Speed = 0;
-            i2cBuffer[0] = 0x0a;
-            i2cBuffer[1] = motor2Speed;
-            pins.i2cWriteBuffer(i2cAddr, i2cBuffer);
+            writeReg2Bytes(0x0a, 0);
         }
     }
 
@@ -249,19 +225,13 @@ namespace jellystem {
     //% weight=377
     //%block="set %motor to %mode"
     export function wheelBrake(motor: Motors, mode: MotorMode): void {
-        let i2cBuffer = pins.createBuffer(2)
-
         if (motor == Motors.Motor1 || motor == Motors.AllMotors) {
             motor1Speed = 0;
-            i2cBuffer[0] = 0x19;
-            i2cBuffer[1] = mode;
-            pins.i2cWriteBuffer(i2cAddr, i2cBuffer);
+            writeReg2Bytes(0x19, mode);
         }
         if (motor == Motors.Motor2 || motor == Motors.AllMotors) {
             motor2Speed = 0;
-            i2cBuffer[0] = 0x1a;
-            i2cBuffer[1] = mode;
-            pins.i2cWriteBuffer(i2cAddr, i2cBuffer);
+            writeReg2Bytes(0x1a, mode);
         }
     }
 
@@ -278,18 +248,13 @@ namespace jellystem {
     //% offset2.min=-10 offset2.max=0
     //% offset1.defl=0 offset2.defl=0
     export function motorsAdjustment(offset1: number, offset2: number): void {
-        let buffer = pins.createBuffer(2)
         offset1 = pins.map(offset1, -10, 0, 10, 0);
         offset2 = pins.map(offset2, -10, 0, 10, 0);
 
-        buffer[0] = 0x07;
-        buffer[1] = offset1;
-        pins.i2cWriteBuffer(i2cAddr, buffer);
+        writeReg2Bytes(0x07, offset1);
         basic.pause(10);
         
-        buffer[0] = 0x08;
-        buffer[1] = offset2;
-        pins.i2cWriteBuffer(i2cAddr, buffer);
+        writeReg2Bytes(0x08, offset2);
         basic.pause(10);
     }
 
@@ -303,29 +268,12 @@ namespace jellystem {
     //% weight=370
     //% onOff.shadow=toggleOnOff
     export function setLed(led: Leds, onOff: boolean) {
-        let buf = pins.createBuffer(2)
-        if (onOff){
-            buf[1] = 1;
-        }else{
-            buf[1] = 0;
-        }
+        let stateVal = onOff ? 1 : 0;
         
-        if (led == Leds.LED20 || led == Leds.AllLED){
-            buf[0] = 0x0b;
-            pins.i2cWriteBuffer(i2cAddr, buf);
-        }
-        if (led == Leds.LED40 || led == Leds.AllLED) {
-            buf[0] = 0x0c;
-            pins.i2cWriteBuffer(i2cAddr, buf);
-        }
-        if (led == Leds.LED60 || led == Leds.AllLED) {
-            buf[0] = 0x0d;
-            pins.i2cWriteBuffer(i2cAddr, buf);
-        }
-        if (led == Leds.LED80 || led == Leds.AllLED) {
-            buf[0] = 0x0e;
-            pins.i2cWriteBuffer(i2cAddr, buf);
-        }
+        if (led == Leds.LED20 || led == Leds.AllLED) writeReg2Bytes(0x0b, stateVal);
+        if (led == Leds.LED40 || led == Leds.AllLED) writeReg2Bytes(0x0c, stateVal);
+        if (led == Leds.LED60 || led == Leds.AllLED) writeReg2Bytes(0x0d, stateVal);
+        if (led == Leds.LED80 || led == Leds.AllLED) writeReg2Bytes(0x0e, stateVal);
     }
 
     //% shim=mShieldInfrared::irCode
@@ -388,11 +336,8 @@ namespace jellystem {
     //% group="PWM port"
     //% weight=350
     //% block="set S1-S4 as %type ports"
-    export function setS1ToS4Type(type: S1ToS4Type): void {
-        let buf = pins.createBuffer(2)
-        buf[0] = 0x0f;
-        buf[1] = type;
-        pins.i2cWriteBuffer(i2cAddr, buf);
+   export function setS1ToS4Type(type: S1ToS4Type): void {
+        writeReg2Bytes(0x0f, type);
     }
 
     /**
@@ -406,25 +351,13 @@ namespace jellystem {
     //% pulseWidth.min=0 pulseWidth.max=200
     //% pulseWidth.defl=0
     export function extendPwmControl(index: PwmAndServoIndex, pulseWidth: number): void {
-        let buf = pins.createBuffer(2)
+        // Defensive coding: clamp pulseWidth
+        pulseWidth = Math.max(0, Math.min(200, pulseWidth));
 
-        buf[1] = pulseWidth;
-        if (index == PwmAndServoIndex.S1 || index == PwmAndServoIndex.All){
-            buf[0] = 0x10;
-            pins.i2cWriteBuffer(i2cAddr, buf);
-        }
-        if (index == PwmAndServoIndex.S2 || index == PwmAndServoIndex.All){
-            buf[0] = 0x11;
-            pins.i2cWriteBuffer(i2cAddr, buf);
-        }
-        if (index == PwmAndServoIndex.S3 || index == PwmAndServoIndex.All){
-            buf[0] = 0x12;
-            pins.i2cWriteBuffer(i2cAddr, buf);
-        }
-        if (index == PwmAndServoIndex.S4 || index == PwmAndServoIndex.All){
-            buf[0] = 0x13;
-            pins.i2cWriteBuffer(i2cAddr, buf);
-        }
+        if (index == PwmAndServoIndex.S1 || index == PwmAndServoIndex.All) writeReg2Bytes(0x10, pulseWidth);
+        if (index == PwmAndServoIndex.S2 || index == PwmAndServoIndex.All) writeReg2Bytes(0x11, pulseWidth);
+        if (index == PwmAndServoIndex.S3 || index == PwmAndServoIndex.All) writeReg2Bytes(0x12, pulseWidth);
+        if (index == PwmAndServoIndex.S4 || index == PwmAndServoIndex.All) writeReg2Bytes(0x13, pulseWidth);
     }
 
     /**
@@ -494,26 +427,11 @@ namespace jellystem {
     //% weight=340
     //% block="battery level: %batType"
     export function batteryLevel(batType: BatteryType) : number {
-        let i2cBuffer = pins.createBuffer(1);
-        if (batType == BatteryType.AA3)
-            i2cBuffer[0] = 0x01;
-        else if (batType == BatteryType.AA4)
-            i2cBuffer[0] = 0x02;
-        else if (batType == BatteryType.AA5)
-            i2cBuffer[0] = 0x03;
-        else if (batType == BatteryType.AA6)
-            i2cBuffer[0] = 0x04;
-        else if (batType == BatteryType.LithiumBattery1)
-            i2cBuffer[0] = 0x05;
-        else if (batType == BatteryType.LithiumBattery2)
-            i2cBuffer[0] = 0x06;
-        pins.i2cWriteBuffer(i2cAddr, i2cBuffer);
+        // Maps the enum value directly to the register byte payload
+        writeReg1Byte(batType);
 
         let batLevel = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false);
-        if (batLevel>100)
-            batLevel = 100;
-        
-        return batLevel; 
+        return Math.min(100, batLevel); 
     }
 
     /**
@@ -524,12 +442,10 @@ namespace jellystem {
     //% weight=339
     //% block="battery voltage"
     export function batteryVoltage(): number {
-        let i2cBuffer = pins.createBuffer(1);
-        i2cBuffer[0] = 0x1B;
-        pins.i2cWriteBuffer(i2cAddr, i2cBuffer);
+        writeReg1Byte(0x1B);
 
         let batVolt = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false);
-        return batVolt/10;
+        return batVolt / 10;
     }
 
     /**
@@ -540,14 +456,28 @@ namespace jellystem {
     //% weight=330
     //% block="version number"
     export function readVersions(): string {
-        let mCarVersions: number = 0;
+        writeReg1Byte(0x00);
 
-        let i2cBuffer = pins.createBuffer(1);
-        i2cBuffer[0] = 0x00;
+        let mCarVersions = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false);
+        return `V${mCarVersions}`; // Clean template literal syntax
+    }
 
-        pins.i2cWriteBuffer(i2cAddr, i2cBuffer)
-        mCarVersions = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false)
+    /**
+     * Private helper to write a command register and a value byte over I2C.
+     */
+    function writeReg2Bytes(reg: number, value: number): void {
+        let buf = pins.createBuffer(2);
+        buf[0] = reg;
+        buf[1] = value;
+        pins.i2cWriteBuffer(i2cAddr, buf);
+    }
 
-        return ("V" + convertToText(mCarVersions))
+    /**
+     * Private helper to write a single register/command byte over I2C.
+     */
+    function writeReg1Byte(reg: number): void {
+        let buf = pins.createBuffer(1);
+        buf[0] = reg;
+        pins.i2cWriteBuffer(i2cAddr, buf);
     }
 }
