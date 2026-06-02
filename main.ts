@@ -136,8 +136,6 @@ namespace jellystem {
 
     // For Ir receiver
     let irVal = 0
-    let irstate: number;
-    let state: number;
 
     //The I2C speed is 100Khz, and the slave address is 0x29
     let i2cAddr: number = 0x29;
@@ -173,7 +171,6 @@ namespace jellystem {
     //% speed.defl=0
     //% weight=380
     export function setMotorsDirectionSpeed(motor: Motors, direction: MotorsDirection, speed: number): void {
-        // Defensive coding: clamp the speed between 0 and 100
         speed = Math.max(0, Math.min(100, speed));
         
         if (motor == Motors.Motor1 || motor == Motors.AllMotors) {
@@ -199,7 +196,6 @@ namespace jellystem {
     //% m2Speed.min=-100 m2Speed.max=100
     //% weight=379
     export function setMotorsSpeed(m1Speed: number, m2Speed: number): void {
-        // Defensive coding: clamp inputs to explicit limits
         m1Speed = Math.max(-100, Math.min(100, m1Speed));
         m2Speed = Math.max(-100, Math.min(100, m2Speed));
         
@@ -320,7 +316,6 @@ namespace jellystem {
         })
     }
 
-
     /**
      * Select the value of the infrared key that you want to be pressed.
      */
@@ -333,7 +328,6 @@ namespace jellystem {
     export function irButton(irButton: MshieldIrButtons): boolean {
         return (irVal & 0x00ff) == irButton as number
     }
-
 
     /**
      * Read IR value.
@@ -355,7 +349,7 @@ namespace jellystem {
     //% group="PWM port"
     //% weight=350
     //% block="set S1-S4 as %type ports"
-   export function setS1ToS4Type(type: S1ToS4Type): void {
+    export function setS1ToS4Type(type: S1ToS4Type): void {
         writeReg2Bytes(0x0f, type);
     }
 
@@ -370,7 +364,6 @@ namespace jellystem {
     //% pulseWidth.min=0 pulseWidth.max=200
     //% pulseWidth.defl=0
     export function extendPwmControl(index: PwmAndServoIndex, pulseWidth: number): void {
-        // Defensive coding: clamp pulseWidth
         pulseWidth = Math.max(0, Math.min(200, pulseWidth));
 
         if (index == PwmAndServoIndex.S1 || index == PwmAndServoIndex.All) writeReg2Bytes(0x10, pulseWidth);
@@ -400,26 +393,11 @@ namespace jellystem {
             angleMap = pins.map(angle, 0, 270, 50, 250);
         }
 
-        let buf = pins.createBuffer(2)
-        buf[1] = angleMap;
-        if (index == PwmAndServoIndex.S1 || index == PwmAndServoIndex.All){
-            buf[0] = 0x14;
-            pins.i2cWriteBuffer(i2cAddr, buf);
-        }
-        if (index == PwmAndServoIndex.S2 || index == PwmAndServoIndex.All){
-            buf[0] = 0x15;
-            pins.i2cWriteBuffer(i2cAddr, buf);
-        }
-        if (index == PwmAndServoIndex.S3 || index == PwmAndServoIndex.All){
-            buf[0] = 0x16;
-            pins.i2cWriteBuffer(i2cAddr, buf);
-        }
-        if (index == PwmAndServoIndex.S4 || index == PwmAndServoIndex.All){
-            buf[0] = 0x17;
-            pins.i2cWriteBuffer(i2cAddr, buf);
-        }
+        if (index == PwmAndServoIndex.S1 || index == PwmAndServoIndex.All) writeReg2Bytes(0x14, angleMap);
+        if (index == PwmAndServoIndex.S2 || index == PwmAndServoIndex.All) writeReg2Bytes(0x15, angleMap);
+        if (index == PwmAndServoIndex.S3 || index == PwmAndServoIndex.All) writeReg2Bytes(0x16, angleMap);
+        if (index == PwmAndServoIndex.S4 || index == PwmAndServoIndex.All) writeReg2Bytes(0x17, angleMap);
     }
-
 
     /**
      * The steering gear rotates continuously, and is used for the steering gear of 360 degrees rotation.
@@ -436,7 +414,6 @@ namespace jellystem {
         extendServoControl(index, ServoType.Servo180, speed)
     }
 
-
     /**
      * Sets the battery type and returns the battery level.
      * @param batType - Type of battery. 
@@ -446,7 +423,6 @@ namespace jellystem {
     //% weight=340
     //% block="battery level: %batType"
     export function batteryLevel(batType: BatteryType) : number {
-        // Maps the enum value directly to the register byte payload
         writeReg1Byte(batType);
 
         let batLevel = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false);
@@ -478,6 +454,6 @@ namespace jellystem {
         writeReg1Byte(0x00);
 
         let mCarVersions = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false);
-        return `V${mCarVersions}`; // Clean template literal syntax
+        return `V${mCarVersions}`;
     }
 }
