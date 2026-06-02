@@ -279,8 +279,8 @@ namespace jellystem {
     //% offset1.defl=0 offset2.defl=0
     export function motorsAdjustment(offset1: number, offset2: number): void {
         let buffer = pins.createBuffer(2)
-        offset1 = Math.map(offset1, -10, 0, 10, 0);
-        offset2 = Math.map(offset2, -10, 0, 10, 0);
+        offset1 = pins.map(offset1, -10, 0, 10, 0);
+        offset2 = pins.map(offset2, -10, 0, 10, 0);
 
         buffer[0] = 0x07;
         buffer[1] = offset1;
@@ -439,13 +439,13 @@ namespace jellystem {
     //% block="set %index %servoType servo angle to %angle°"
     //% angle.defl=0
     export function extendServoControl(index: PwmAndServoIndex, servoType: ServoType, angle: number): void {
-        let angleMap: number
+        let angleMap: number = 0;
         if (servoType == ServoType.Servo90) {
-            angleMap = Math.map(angle, 0, 90, 50, 250);
+            angleMap = pins.map(angle, 0, 90, 50, 250);
         }else if (servoType == ServoType.Servo180) {
-            angleMap = Math.map(angle, 0, 180, 50, 250);
+            angleMap = pins.map(angle, 0, 180, 50, 250);
         }else if (servoType == ServoType.Servo270) {
-            angleMap = Math.map(angle, 0, 270, 50, 250);
+            angleMap = pins.map(angle, 0, 270, 50, 250);
         }
 
         let buf = pins.createBuffer(2)
@@ -480,7 +480,7 @@ namespace jellystem {
     //% speed.min=-100 speed.max=100
     //% speed.defl=0
     export function continuousServoControl(index: PwmAndServoIndex, speed: number): void {
-        speed = Math.map(speed, -100, 100, 0, 180)
+        speed = pins.map(speed, -100, 100, 0, 180)
         extendServoControl(index, ServoType.Servo180, speed)
     }
 
