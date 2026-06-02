@@ -1,0 +1,6 @@
+node_modules
+pxt_modules
+built
+yotta_modules
+yotta_targets
+*.local.json
