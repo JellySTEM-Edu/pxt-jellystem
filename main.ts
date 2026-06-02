@@ -15,7 +15,7 @@
 * Released under the MIT License.
 */
 
-//% weight=100 color="#246C64" icon="\uf1b2" block="JellySTEM"
+//% weight=100 color="#246C64" icon="\f1cb" block="JellySTEM"
 namespace jellystem {
     export enum MotorsDirection {
         //%block="clockwise"
