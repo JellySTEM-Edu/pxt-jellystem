@@ -143,6 +143,25 @@ namespace jellystem {
     let i2cAddr: number = 0x29;
 
     /**
+     * Private helper to write a command register and a value byte over I2C.
+     */
+    function writeReg2Bytes(reg: number, value: number): void {
+        let buf = pins.createBuffer(2);
+        buf[0] = reg;
+        buf[1] = value;
+        pins.i2cWriteBuffer(i2cAddr, buf);
+    }
+
+    /**
+     * Private helper to write a single register/command byte over I2C.
+     */
+    function writeReg1Byte(reg: number): void {
+        let buf = pins.createBuffer(1);
+        buf[0] = reg;
+        pins.i2cWriteBuffer(i2cAddr, buf);
+    }
+
+    /**
     * Set the speed and direction of the motors
     * @param motor - The motors of mShield.
     * @param direction - The motor goes clockwise or counterclockwise.
@@ -460,24 +479,5 @@ namespace jellystem {
 
         let mCarVersions = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false);
         return `V${mCarVersions}`; // Clean template literal syntax
-    }
-
-    /**
-     * Private helper to write a command register and a value byte over I2C.
-     */
-    function writeReg2Bytes(reg: number, value: number): void {
-        let buf = pins.createBuffer(2);
-        buf[0] = reg;
-        buf[1] = value;
-        pins.i2cWriteBuffer(i2cAddr, buf);
-    }
-
-    /**
-     * Private helper to write a single register/command byte over I2C.
-     */
-    function writeReg1Byte(reg: number): void {
-        let buf = pins.createBuffer(1);
-        buf[0] = reg;
-        pins.i2cWriteBuffer(i2cAddr, buf);
     }
 }
