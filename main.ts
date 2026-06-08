@@ -468,7 +468,9 @@ namespace jellystem {
         return `V${mCarVersions}`;
     }
 
-// --- NEOPIXEL SUB-GROUP WRAPPERS (EXACT FULL PARITY) ---
+    // =========================================================================
+    // --- NEOPIXEL FULL PARITY WORKSPACE INTEGRATION ---
+    // =========================================================================
 
     /**
      * Create a new NeoPixel driver for `numleds` LEDs.
@@ -476,6 +478,7 @@ namespace jellystem {
      * @param numleds number of leds in the strip, eg: 24,30,60,64
      */
     //% group="NeoPixel"
+    //% blockId=jelly_neopixel_create
     //% block="NeoPixel at pin %pin|with %numleds|leds as %mode"
     //% weight=90 blockGap=8
     //% blockSetVariable=strip
@@ -488,7 +491,9 @@ namespace jellystem {
      * @param rgb RGB color of the LED
      */
     //% group="NeoPixel"
+    //% blockId=jelly_neopixel_show_color
     //% block="%strip|show color %rgb=neopixel_colors"
+    //% strip.defl=strip
     //% strip.shadow=variables_get
     //% weight=85 blockGap=8
     export function showColor(strip: neopixel.Strip, rgb: number): void {
@@ -501,7 +506,9 @@ namespace jellystem {
      * @param endHue the end hue value for the rainbow, eg: 360
      */
     //% group="NeoPixel"
+    //% blockId=jelly_neopixel_show_rainbow
     //% block="%strip|show rainbow from %startHue|to %endHue"
+    //% strip.defl=strip
     //% strip.shadow=variables_get
     //% startHue.defl=1 endHue.defl=360
     //% weight=84 blockGap=8
@@ -516,20 +523,44 @@ namespace jellystem {
      * @param high maximum value, eg: 255
      */
     //% group="NeoPixel"
+    //% blockId=jelly_neopixel_show_bar_graph
     //% block="%strip|show bar graph of %value|up to %high"
+    //% strip.defl=strip
     //% strip.shadow=variables_get
     //% weight=83 blockGap=8
     export function showBarGraph(strip: neopixel.Strip, value: number, high: number): void {
         strip.showBarGraph(value, high);
     }
 
+    // --- ADVANCED ("MORE...") NEOPIXEL SUB-GROUP BLOCKS ---
+
+    /**
+     * Set LED to a given color (range 0-255 for r, g, b).
+     * You need to call ``show`` to make the changes visible.
+     * @param pixeloffset position of the NeoPixel in the strip
+     * @param rgb RGB color of the LED
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_set_pixel_color
+    //% block="%strip|set pixel color at %pixeloffset|to %rgb=neopixel_colors"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=80 blockGap=8
+    //% advanced=true
+    export function setPixelColor(strip: neopixel.Strip, pixeloffset: number, rgb: number): void {
+        strip.setPixelColor(pixeloffset, rgb);
+    }
+
     /**
      * Send all the changes to the strip.
      */
     //% group="NeoPixel"
+    //% blockId=jelly_neopixel_show
     //% block="%strip|show" 
+    //% strip.defl=strip
     //% strip.shadow=variables_get
-    //% weight=82 blockGap=8
+    //% weight=79 blockGap=8
+    //% advanced=true
     export function show(strip: neopixel.Strip): void {
         strip.show();
     }
@@ -539,62 +570,24 @@ namespace jellystem {
      * You need to call ``show`` to make the changes visible.
      */
     //% group="NeoPixel"
+    //% blockId=jelly_neopixel_clear
     //% block="%strip|clear"
+    //% strip.defl=strip
     //% strip.shadow=variables_get
-    //% weight=81 blockGap=8
+    //% weight=78 blockGap=8
+    //% advanced=true
     export function clear(strip: neopixel.Strip): void {
         strip.clear();
     }
 
-    // --- ADVANCED "MORE..." NEOPIXEL SUB-GROUP BLOCKS ---
-
     /**
-     * Set LED to a given color (range 0-255 for r, g, b).
-     * You need to call ``show`` to make the changes visible.
-     * @param pixeloffset position of the NeoPixel in the strip
-     * @param rgb RGB color of the LED
-     */
-    //% group="NeoPixel"
-    //% block="%strip|set pixel color at %pixeloffset|to %rgb=neopixel_colors"
-    //% strip.shadow=variables_get
-    //% weight=80 blockGap=8
-    //% advanced=true
-    export function setPixelColor(strip: neopixel.Strip, pixeloffset: number, rgb: number): void {
-        strip.setPixelColor(pixeloffset, rgb);
-    }
-
-    /**
-     * Set individual pixel white LED brightness for RGB+W NeoPixels.
-     * @param pixeloffset position of the LED in the strip
-     * @param white brightness of the white LED, eg: 255
-     */
-    //% group="NeoPixel"
-    //% block="%strip|set pixel white LED at %pixeloffset|to %white"
-    //% strip.shadow=variables_get
-    //% weight=79 blockGap=8
-    //% advanced=true
-    export function setPixelWhiteLED(strip: neopixel.Strip, pixeloffset: number, white: number): void {
-        strip.setPixelWhiteLED(pixeloffset, white);
-    }
-
-    /**
-     * Gets the number of pixels declared on the strip.
-     */
-    //% group="NeoPixel"
-    //% block="%strip|length"
-    //% strip.shadow=variables_get
-    //% weight=78 blockGap=8
-    //% advanced=true
-    export function length(strip: neopixel.Strip): number {
-        return strip.length();
-    }
-
-    /**
-     * Set the brightness of the strip. This flag only applies to future operations.
+     * Set the brightness of the strip. This flag only applies to future operation.
      * @param brightness a measure of LED brightness in 0-255. eg: 255
      */
     //% group="NeoPixel"
+    //% blockId=jelly_neopixel_set_brightness
     //% block="%strip|set brightness %brightness"
+    //% strip.defl=strip
     //% strip.shadow=variables_get
     //% weight=77 blockGap=8
     //% advanced=true
@@ -603,15 +596,20 @@ namespace jellystem {
     }
 
     /**
-     * Apply brightness to current colors using a quadratic easing.
+     * Rotate LEDs forward.
+     * You need to call ``show`` to make the changes visible.
+     * @param offset number of pixels to rotate, eg: 1
      */
     //% group="NeoPixel"
-    //% block="%strip|ease brightness"
+    //% blockId=jelly_neopixel_rotate
+    //% block="%strip|rotate by %offset"
+    //% strip.defl=strip
     //% strip.shadow=variables_get
+    //% offset.defl=1
     //% weight=76 blockGap=8
     //% advanced=true
-    export function easeBrightness(strip: neopixel.Strip): void {
-        strip.easeBrightness();
+    export function rotate(strip: neopixel.Strip, offset: number = 1): void {
+        strip.rotate(offset);
     }
 
     /**
@@ -620,7 +618,9 @@ namespace jellystem {
      * @param offset number of pixels to shift, eg: 1
      */
     //% group="NeoPixel"
+    //% blockId=jelly_neopixel_shift
     //% block="%strip|shift by %offset"
+    //% strip.defl=strip
     //% strip.shadow=variables_get
     //% offset.defl=1
     //% weight=75 blockGap=8
@@ -630,35 +630,141 @@ namespace jellystem {
     }
 
     /**
-     * Rotate LEDs forward.
-     * You need to call ``show`` to make the changes visible.
-     * @param offset number of pixels to rotate, eg: 1
-     */
-    //% group="NeoPixel"
-    //% block="%strip|rotate by %offset"
-    //% strip.shadow=variables_get
-    //% offset.defl=1
-    //% weight=74 blockGap=8
-    //% advanced=true
-    export function rotate(strip: neopixel.Strip, offset: number = 1): void {
-        strip.rotate(offset);
-    }
-
-    /**
      * Create a new sub-range segment out of an existing NeoPixel strip.
      * @param start offset position where the new range starts
      * @param length total number of LEDs in the range
      */
     //% group="NeoPixel"
+    //% blockId=jelly_neopixel_range
     //% block="%strip|range from %start|with %length|leds"
+    //% strip.defl=strip
     //% strip.shadow=variables_get
-    //% weight=73 blockGap=8
+    //% weight=74 blockGap=8
+    //% blockSetVariable=range
     //% advanced=true
     export function range(strip: neopixel.Strip, start: number, length: number): neopixel.Strip {
         return strip.range(start, length);
     }
+
+    /**
+     * Set individual pixel white LED brightness for RGB+W NeoPixels.
+     * @param pixeloffset position of the LED in the strip
+     * @param white brightness of the white LED, eg: 255
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_set_pixel_white
+    //% block="%strip|set pixel white LED at %pixeloffset|to %white"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=73 blockGap=8
+    //% advanced=true
+    export function setPixelWhiteLED(strip: neopixel.Strip, pixeloffset: number, white: number): void {
+        strip.setPixelWhiteLED(pixeloffset, white);
+    }
+
+    /**
+     * Gets the number of pixels declared on the strip.
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_length
+    //% block="%strip|length"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=72 blockGap=8
+    //% advanced=true
+    export function length(strip: neopixel.Strip): number {
+        return strip.length();
+    }
+
+    /**
+     * Apply brightness to current colors using a quadratic easing.
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_ease_brightness
+    //% block="%strip|ease brightness"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=71 blockGap=8
+    //% advanced=true
+    export function easeBrightness(strip: neopixel.Strip): void {
+        strip.easeBrightness();
+    }
+
+    /**
+     * Sets the number of pixels in a matrix shaped strip
+     * @param width number of pixels in a row
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_set_matrix_width
+    //% block="%strip|set matrix width %width"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=70 blockGap=8
+    //% advanced=true
+    export function setMatrixWidth(strip: neopixel.Strip, width: number): void {
+        strip.setMatrixWidth(width);
+    }
+
+    /**
+     * Set LED to a given color (range 0-255 for r, g, b) in a matrix shaped strip
+     * You need to call ``show`` to make the changes visible.
+     * @param x horizontal position
+     * @param y vertical position
+     * @param rgb RGB color of the LED
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_set_matrix_color
+    //% block="%strip|set matrix color at x %x|y %y|to %rgb=neopixel_colors"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=69 blockGap=8
+    //% advanced=true
+    export function setMatrixColor(strip: neopixel.Strip, x: number, y: number, rgb: number): void {
+        strip.setMatrixColor(x, y, rgb);
+    }
+
+    // --- STATIC COLOR HELPER UTILITIES ---
+
+    /**
+     * Gets the RGB value of a known color
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_colors
+    //% block="%color"
+    //% weight=65 blockGap=8
+    //% advanced=true
+    export function colors(color: NeoPixelColors): number {
+        return neopixel.colors(color);
+    }
+
+    /**
+     * Converts red, green, blue channels into an RGB color code value.
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_rgb
+    //% block="red %red|green %green|blue %blue"
+    //% red.min=0 red.max=255 green.min=0 green.max=255 blue.min=0 blue.max=255
+    //% weight=64 blockGap=8
+    //% advanced=true
+    export function rgb(red: number, green: number, blue: number): number {
+        return neopixel.rgb(red, green, blue);
+    }
+
+    /**
+     * Converts hue, saturation, luminosity values into an RGB color code value.
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_hsl
+    //% block="hue %h|saturation %s|luminosity %l"
+    //% h.min=0 h.max=360 s.min=0 s.max=99 l.min=0 l.max=99
+    //% weight=63 blockGap=8
+    //% advanced=true
+    export function hsl(h: number, s: number, l: number): number {
+        return neopixel.hsl(h, s, l);
+    }
 }
 
 // --- SILENT SIDEBAR OVERRIDE LAYER ---
-//% deprecated=true
+// Forces the background tracking dependency category tab out of sight.
+//% blockHidden=true
 namespace neopixel { }
