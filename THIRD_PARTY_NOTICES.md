@@ -23,3 +23,21 @@ Changes by JellySTEM:
 - Future additions may include motor acceleration, safe direction changes, sensors, lights, and classroom project helpers
 
 The original MIT license requires that the copyright notice and permission notice be included in all copies or substantial portions of the software.
+
+---
+
+Additional third-party code:
+Project name:
+Microsoft pxt-neopixel
+
+Repository:
+https://github.com/microsoft/pxt-neopixel
+
+License:
+MIT License
+
+Original copyright:
+Copyright (c) Microsoft Corporation
+
+Changes by JellySTEM:
+- Linked as a background library dependency to re-export addressable RGB LED control blocks inside the unified JellySTEM block drawer.
