@@ -467,4 +467,304 @@ namespace jellystem {
         let mCarVersions = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false);
         return `V${mCarVersions}`;
     }
+
+    // =========================================================================
+    // --- NEOPIXEL FULL PARITY WORKSPACE INTEGRATION ---
+    // =========================================================================
+
+    /**
+     * Create a new NeoPixel driver for `numleds` LEDs.
+     * @param pin the pin where the neopixel is connected.
+     * @param numleds number of leds in the strip, eg: 24,30,60,64
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_create
+    //% block="NeoPixel at pin %pin|with %numleds|leds as %mode"
+    //% weight=90 blockGap=8
+    //% blockSetVariable=strip
+    export function create(pin: DigitalPin, numleds: number, mode: NeoPixelMode): neopixel.Strip {
+        return neopixel.create(pin, numleds, mode);
+    }
+
+    /**
+     * Shows all LEDs to a given color (range 0-255 for r, g, b).
+     * @param rgb RGB color of the LED
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_show_color
+    //% block="%strip|show color %rgb=neopixel_colors"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=85 blockGap=8
+    export function showColor(strip: neopixel.Strip, rgb: number): void {
+        strip.showColor(rgb);
+    }
+
+    /**
+     * Shows a rainbow pattern on all LEDs.
+     * @param startHue the start hue value for the rainbow, eg: 1
+     * @param endHue the end hue value for the rainbow, eg: 360
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_show_rainbow
+    //% block="%strip|show rainbow from %startHue|to %endHue"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% startHue.defl=1 endHue.defl=360
+    //% weight=84 blockGap=8
+    export function showRainbow(strip: neopixel.Strip, startHue: number = 1, endHue: number = 360): void {
+        strip.showRainbow(startHue, endHue);
+    }
+
+    /**
+     * Displays a vertical bar graph based on the `value` and `high` value.
+     * If `high` is 0, the chart gets adjusted automatically.
+     * @param value current value to plot
+     * @param high maximum value, eg: 255
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_show_bar_graph
+    //% block="%strip|show bar graph of %value|up to %high"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=83 blockGap=8
+    export function showBarGraph(strip: neopixel.Strip, value: number, high: number): void {
+        strip.showBarGraph(value, high);
+    }
+
+    // --- ADVANCED ("MORE...") NEOPIXEL SUB-GROUP BLOCKS ---
+
+    /**
+     * Set LED to a given color (range 0-255 for r, g, b).
+     * You need to call ``show`` to make the changes visible.
+     * @param pixeloffset position of the NeoPixel in the strip
+     * @param rgb RGB color of the LED
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_set_pixel_color
+    //% block="%strip|set pixel color at %pixeloffset|to %rgb=neopixel_colors"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=80 blockGap=8
+    //% advanced=true
+    export function setPixelColor(strip: neopixel.Strip, pixeloffset: number, rgb: number): void {
+        strip.setPixelColor(pixeloffset, rgb);
+    }
+
+    /**
+     * Send all the changes to the strip.
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_show
+    //% block="%strip|show" 
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=79 blockGap=8
+    //% advanced=true
+    export function show(strip: neopixel.Strip): void {
+        strip.show();
+    }
+
+    /**
+     * Turn off all LEDs.
+     * You need to call ``show`` to make the changes visible.
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_clear
+    //% block="%strip|clear"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=78 blockGap=8
+    //% advanced=true
+    export function clear(strip: neopixel.Strip): void {
+        strip.clear();
+    }
+
+    /**
+     * Set the brightness of the strip. This flag only applies to future operation.
+     * @param brightness a measure of LED brightness in 0-255. eg: 255
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_set_brightness
+    //% block="%strip|set brightness %brightness"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=77 blockGap=8
+    //% advanced=true
+    export function setBrightness(strip: neopixel.Strip, brightness: number): void {
+        strip.setBrightness(brightness);
+    }
+
+    /**
+     * Rotate LEDs forward.
+     * You need to call ``show`` to make the changes visible.
+     * @param offset number of pixels to rotate, eg: 1
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_rotate
+    //% block="%strip|rotate by %offset"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% offset.defl=1
+    //% weight=76 blockGap=8
+    //% advanced=true
+    export function rotate(strip: neopixel.Strip, offset: number = 1): void {
+        strip.rotate(offset);
+    }
+
+    /**
+     * Shift LEDs forward and clear with a zero.
+     * You need to call ``show`` to make the changes visible.
+     * @param offset number of pixels to shift, eg: 1
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_shift
+    //% block="%strip|shift by %offset"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% offset.defl=1
+    //% weight=75 blockGap=8
+    //% advanced=true
+    export function shift(strip: neopixel.Strip, offset: number = 1): void {
+        strip.shift(offset);
+    }
+
+    /**
+     * Create a new sub-range segment out of an existing NeoPixel strip.
+     * @param start offset position where the new range starts
+     * @param length total number of LEDs in the range
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_range
+    //% block="%strip|range from %start|with %length|leds"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=74 blockGap=8
+    //% blockSetVariable=range
+    //% advanced=true
+    export function range(strip: neopixel.Strip, start: number, length: number): neopixel.Strip {
+        return strip.range(start, length);
+    }
+
+    /**
+     * Set individual pixel white LED brightness for RGB+W NeoPixels.
+     * @param pixeloffset position of the LED in the strip
+     * @param white brightness of the white LED, eg: 255
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_set_pixel_white
+    //% block="%strip|set pixel white LED at %pixeloffset|to %white"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=73 blockGap=8
+    //% advanced=true
+    export function setPixelWhiteLED(strip: neopixel.Strip, pixeloffset: number, white: number): void {
+        strip.setPixelWhiteLED(pixeloffset, white);
+    }
+
+    /**
+     * Gets the number of pixels declared on the strip.
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_length
+    //% block="%strip|length"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=72 blockGap=8
+    //% advanced=true
+    export function length(strip: neopixel.Strip): number {
+        return strip.length();
+    }
+
+    /**
+     * Apply brightness to current colors using a quadratic easing.
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_ease_brightness
+    //% block="%strip|ease brightness"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=71 blockGap=8
+    //% advanced=true
+    export function easeBrightness(strip: neopixel.Strip): void {
+        strip.easeBrightness();
+    }
+
+    /**
+     * Sets the number of pixels in a matrix shaped strip
+     * @param width number of pixels in a row
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_set_matrix_width
+    //% block="%strip|set matrix width %width"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=70 blockGap=8
+    //% advanced=true
+    export function setMatrixWidth(strip: neopixel.Strip, width: number): void {
+        strip.setMatrixWidth(width);
+    }
+
+    /**
+     * Set LED to a given color (range 0-255 for r, g, b) in a matrix shaped strip
+     * You need to call ``show`` to make the changes visible.
+     * @param x horizontal position
+     * @param y vertical position
+     * @param rgb RGB color of the LED
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_set_matrix_color
+    //% block="%strip|set matrix color at x %x|y %y|to %rgb=neopixel_colors"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=69 blockGap=8
+    //% advanced=true
+    export function setMatrixColor(strip: neopixel.Strip, x: number, y: number, rgb: number): void {
+        strip.setMatrixColor(x, y, rgb);
+    }
+
+    // --- STATIC COLOR HELPER UTILITIES ---
+
+    /**
+     * Gets the RGB value of a known color
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_colors
+    //% block="%color"
+    //% weight=65 blockGap=8
+    //% advanced=true
+    export function colors(color: NeoPixelColors): number {
+        return neopixel.colors(color);
+    }
+
+    /**
+     * Converts red, green, blue channels into an RGB color code value.
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_rgb
+    //% block="red %red|green %green|blue %blue"
+    //% red.min=0 red.max=255 green.min=0 green.max=255 blue.min=0 blue.max=255
+    //% weight=64 blockGap=8
+    //% advanced=true
+    export function rgb(red: number, green: number, blue: number): number {
+        return neopixel.rgb(red, green, blue);
+    }
+
+    /**
+     * Converts hue, saturation, luminosity values into an RGB color code value.
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_hsl
+    //% block="hue %h|saturation %s|luminosity %l"
+    //% h.min=0 h.max=360 s.min=0 s.max=99 l.min=0 l.max=99
+    //% weight=63 blockGap=8
+    //% advanced=true
+    export function hsl(h: number, s: number, l: number): number {
+        return neopixel.hsl(h, s, l);
+    }
 }
+
+// --- SILENT SIDEBAR OVERRIDE LAYER ---
+// Forces the background tracking dependency category tab out of sight.
+//% blockHidden=true
+namespace neopixel { }
