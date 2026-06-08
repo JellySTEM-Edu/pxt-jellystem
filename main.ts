@@ -467,4 +467,87 @@ namespace jellystem {
         let mCarVersions = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false);
         return `V${mCarVersions}`;
     }
+
+    // --- NEOPIXEL SUB-GROUP WRAPPERS ---
+
+    /**
+     * Create a new NeoPixel driver block inside the JellySTEM tab.
+     * @param pin the pin where the NeoPixel strip is connected, eg: DigitalPin.P15
+     * @param numleds number of leds in the strip, eg: 4
+     */
+    //% group="NeoPixel"
+    //% block="initialize %numleds NeoPixels on pin %pin"
+    //% numleds.defl=4
+    //% weight=90
+    //% blockSetVariable=strip
+    export function jellyNeoPixelCreate(pin: DigitalPin, numleds: number): neopixel.Strip {
+        return neopixel.create(pin, numleds, NeoPixelMode.RGB);
+    }
+
+    /**
+     * Shows all LEDs to a given color.
+     * @param strip the neopixel strip variable
+     * @param rgb RGB color of the LED
+     */
+    //% group="NeoPixel"
+    //% block="%strip show color %rgb=neopixel_colors"
+    //% strip.shadow=variables_get
+    //% weight=85
+    export function jellyNeoPixelColor(strip: neopixel.Strip, rgb: number): void {
+        strip.showColor(rgb);
+    }
+
+    /**
+     * Shows a rainbow pattern on all LEDs.
+     * @param strip the neopixel strip variable
+     */
+    //% group="NeoPixel"
+    //% block="%strip show rainbow pattern"
+    //% strip.shadow=variables_get
+    //% weight=84
+    export function jellyNeoPixelRainbow(strip: neopixel.Strip): void {
+        strip.showRainbow(1, 360);
+    }
+
+    /**
+     * Displays a vertical bar graph on the NeoPixels.
+     * @param strip the neopixel strip variable
+     * @param value current value to plot
+     * @param high maximum value, eg: 255
+     */
+    //% group="NeoPixel"
+    //% block="%strip show bar graph of %value up to %high"
+    //% strip.shadow=variables_get
+    //% weight=83
+    export function jellyNeoPixelBarGraph(strip: neopixel.Strip, value: number, high: number): void {
+        strip.showBarGraph(value, high);
+    }
+
+    /**
+     * Turn off all LEDs on the NeoPixel strip.
+     * @param strip the neopixel strip variable
+     */
+    //% group="NeoPixel"
+    //% block="%strip clear all pixels"
+    //% strip.shadow=variables_get
+    //% weight=80
+    export function jellyNeoPixelClear(strip: neopixel.Strip): void {
+        strip.clear();
+        strip.show();
+    }
+
+    /**
+     * Set the brightness level of the NeoPixel strip.
+     * @param strip the neopixel strip variable
+     * @param brightness brightness level from 0 to 255, eg: 128
+     */
+    //% group="NeoPixel"
+    //% block="%strip set brightness to %brightness"
+    //% strip.shadow=variables_get
+    //% brightness.min=0 brightness.max=255
+    //% brightness.defl=128
+    //% weight=75
+    export function jellyNeoPixelBrightness(strip: neopixel.Strip, brightness: number): void {
+        strip.setBrightness(brightness);
+    }
 }
