@@ -511,7 +511,7 @@ namespace jellystem {
     //% strip.defl=strip
     //% strip.shadow=variables_get
     //% startHue.defl=1 endHue.defl=360
-    //% weight=84 blockGap=8
+    //% weight=85 blockGap=8
     export function showRainbow(strip: neopixel.Strip, startHue: number = 1, endHue: number = 360): void {
         strip.showRainbow(startHue, endHue);
     }
@@ -527,7 +527,7 @@ namespace jellystem {
     //% block="%strip|show bar graph of %value|up to %high"
     //% strip.defl=strip
     //% strip.shadow=variables_get
-    //% weight=83 blockGap=8
+    //% weight=84 blockGap=8
     export function showBarGraph(strip: neopixel.Strip, value: number, high: number): void {
         strip.showBarGraph(value, high);
     }
@@ -573,7 +573,7 @@ namespace jellystem {
     //% block="%strip|clear"
     //% strip.defl=strip
     //% strip.shadow=variables_get
-    //% weight=78 blockGap=8
+    //% weight=76 blockGap=8
     export function clear(strip: neopixel.Strip): void {
         strip.clear();
     }
@@ -587,7 +587,7 @@ namespace jellystem {
     //% block="%strip|set brightness %brightness"
     //% strip.defl=strip
     //% strip.shadow=variables_get
-    //% weight=77 blockGap=8
+    //% weight=59 blockGap=8
     //% advanced=true
     export function setBrightness(strip: neopixel.Strip, brightness: number): void {
         strip.setBrightness(brightness);
@@ -604,7 +604,7 @@ namespace jellystem {
     //% strip.defl=strip
     //% strip.shadow=variables_get
     //% offset.defl=1
-    //% weight=76 blockGap=8
+    //% weight=39 blockGap=8
     export function rotate(strip: neopixel.Strip, offset: number = 1): void {
         strip.rotate(offset);
     }
@@ -620,7 +620,7 @@ namespace jellystem {
     //% strip.defl=strip
     //% strip.shadow=variables_get
     //% offset.defl=1
-    //% weight=75 blockGap=8
+    //% weight=40 blockGap=8
     export function shift(strip: neopixel.Strip, offset: number = 1): void {
         strip.shift(offset);
     }
@@ -635,7 +635,7 @@ namespace jellystem {
     //% block="%strip|range from %start|with %length|leds"
     //% strip.defl=strip
     //% strip.shadow=variables_get
-    //% weight=74 blockGap=8
+    //% weight=89 blockGap=8
     //% blockSetVariable=range
     export function range(strip: neopixel.Strip, start: number, length: number): neopixel.Strip {
         return strip.range(start, length);
@@ -651,7 +651,7 @@ namespace jellystem {
     //% block="%strip|set pixel white LED at %pixeloffset|to %white"
     //% strip.defl=strip
     //% strip.shadow=variables_get
-    //% weight=73 blockGap=8
+    //% weight=80 blockGap=8
     //% advanced=true
     export function setPixelWhiteLED(strip: neopixel.Strip, pixeloffset: number, white: number): void {
         strip.setPixelWhiteLED(pixeloffset, white);
@@ -665,7 +665,7 @@ namespace jellystem {
     //% block="%strip|length"
     //% strip.defl=strip
     //% strip.shadow=variables_get
-    //% weight=72 blockGap=8
+    //% weight=60 blockGap=8
     //% advanced=true
     export function length(strip: neopixel.Strip): number {
         return strip.length();
@@ -679,7 +679,7 @@ namespace jellystem {
     //% block="%strip|ease brightness"
     //% strip.defl=strip
     //% strip.shadow=variables_get
-    //% weight=71 blockGap=8
+    //% weight=58 blockGap=8
     //% advanced=true
     export function easeBrightness(strip: neopixel.Strip): void {
         strip.easeBrightness();
@@ -694,7 +694,7 @@ namespace jellystem {
     //% block="%strip|set matrix width %width"
     //% strip.defl=strip
     //% strip.shadow=variables_get
-    //% weight=70 blockGap=8
+    //% weight=5 blockGap=8
     //% advanced=true
     export function setMatrixWidth(strip: neopixel.Strip, width: number): void {
         strip.setMatrixWidth(width);
@@ -712,7 +712,7 @@ namespace jellystem {
     //% block="%strip|set matrix color at x %x|y %y|to %rgb=neopixel_colors"
     //% strip.defl=strip
     //% strip.shadow=variables_get
-    //% weight=69 blockGap=8
+    //% weight=4 blockGap=8
     //% advanced=true
     export function setMatrixColor(strip: neopixel.Strip, x: number, y: number, rgb: number): void {
         strip.setMatrixColor(x, y, rgb);
@@ -726,7 +726,7 @@ namespace jellystem {
     //% group="NeoPixel"
     //% blockId=jelly_neopixel_colors
     //% block="%color"
-    //% weight=65 blockGap=8
+    //% weight=2 blockGap=8
     //% advanced=true
     export function colors(color: NeoPixelColors): number {
         return neopixel.colors(color);
@@ -739,7 +739,7 @@ namespace jellystem {
     //% blockId=jelly_neopixel_rgb
     //% block="red %red|green %green|blue %blue"
     //% red.min=0 red.max=255 green.min=0 green.max=255 blue.min=0 blue.max=255
-    //% weight=64 blockGap=8
+    //% weight=1 blockGap=8
     //% advanced=true
     export function rgb(red: number, green: number, blue: number): number {
         return neopixel.rgb(red, green, blue);
