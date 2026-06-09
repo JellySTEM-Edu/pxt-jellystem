@@ -560,7 +560,6 @@ namespace jellystem {
     //% strip.defl=strip
     //% strip.shadow=variables_get
     //% weight=79 blockGap=8
-    //% advanced=true
     export function show(strip: neopixel.Strip): void {
         strip.show();
     }
@@ -575,7 +574,6 @@ namespace jellystem {
     //% strip.defl=strip
     //% strip.shadow=variables_get
     //% weight=78 blockGap=8
-    //% advanced=true
     export function clear(strip: neopixel.Strip): void {
         strip.clear();
     }
@@ -602,12 +600,11 @@ namespace jellystem {
      */
     //% group="NeoPixel"
     //% blockId=jelly_neopixel_rotate
-    //% block="%strip|rotate by %offset"
+    //% block="%strip|rotate pixels by %offset"
     //% strip.defl=strip
     //% strip.shadow=variables_get
     //% offset.defl=1
     //% weight=76 blockGap=8
-    //% advanced=true
     export function rotate(strip: neopixel.Strip, offset: number = 1): void {
         strip.rotate(offset);
     }
@@ -619,12 +616,11 @@ namespace jellystem {
      */
     //% group="NeoPixel"
     //% blockId=jelly_neopixel_shift
-    //% block="%strip|shift by %offset"
+    //% block="%strip|shift pixels by %offset"
     //% strip.defl=strip
     //% strip.shadow=variables_get
     //% offset.defl=1
     //% weight=75 blockGap=8
-    //% advanced=true
     export function shift(strip: neopixel.Strip, offset: number = 1): void {
         strip.shift(offset);
     }
@@ -641,7 +637,6 @@ namespace jellystem {
     //% strip.shadow=variables_get
     //% weight=74 blockGap=8
     //% blockSetVariable=range
-    //% advanced=true
     export function range(strip: neopixel.Strip, start: number, length: number): neopixel.Strip {
         return strip.range(start, length);
     }
@@ -758,7 +753,6 @@ namespace jellystem {
     //% block="hue %h|saturation %s|luminosity %l"
     //% h.min=0 h.max=360 s.min=0 s.max=99 l.min=0 l.max=99
     //% weight=63 blockGap=8
-    //% advanced=true
     export function hsl(h: number, s: number, l: number): number {
         return neopixel.hsl(h, s, l);
     }
@@ -766,5 +760,5 @@ namespace jellystem {
 
 // --- SILENT SIDEBAR OVERRIDE LAYER ---
 // Forces the background tracking dependency category tab out of sight.
-//% blockHidden=true
+//% deprecated=true
 namespace neopixel { }
