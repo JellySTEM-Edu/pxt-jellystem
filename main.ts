@@ -183,7 +183,7 @@ namespace jellystem {
     //% weight=380
     export function setMotorsDirectionSpeed(motor: Motors, direction: MotorsDirection, speed: number): void {
         speed = Math.max(0, Math.min(100, speed));
-        
+
         if (motor == Motors.Motor1 || motor == Motors.AllMotors) {
             motor1Speed = speed;
             let value = (direction == MotorsDirection.CC) ? motor1Speed : motor1Speed + 101;
@@ -209,8 +209,8 @@ namespace jellystem {
     export function setMotorsSpeed(m1Speed: number, m2Speed: number): void {
         m1Speed = Math.max(-100, Math.min(100, m1Speed));
         m2Speed = Math.max(-100, Math.min(100, m2Speed));
-        
-        if (m1Speed > 0){
+
+        if (m1Speed > 0) {
             motor1Speed = m1Speed;
             writeReg2Bytes(0x09, motor1Speed);
         } else {
@@ -218,7 +218,7 @@ namespace jellystem {
             writeReg2Bytes(0x09, motor1Speed + 101);
         }
 
-        if (m2Speed > 0){
+        if (m2Speed > 0) {
             motor2Speed = m2Speed;
             writeReg2Bytes(0x0a, motor2Speed);
         } else {
@@ -279,7 +279,7 @@ namespace jellystem {
 
         writeReg2Bytes(0x07, offset1);
         basic.pause(10);
-        
+
         writeReg2Bytes(0x08, offset2);
         basic.pause(10);
     }
@@ -295,7 +295,7 @@ namespace jellystem {
     //% onOff.shadow=toggleOnOff
     export function setLed(led: Leds, onOff: boolean) {
         let stateVal = onOff ? 1 : 0;
-        
+
         if (led == Leds.LED20 || led == Leds.AllLED) writeReg2Bytes(0x0b, stateVal);
         if (led == Leds.LED40 || led == Leds.AllLED) writeReg2Bytes(0x0c, stateVal);
         if (led == Leds.LED60 || led == Leds.AllLED) writeReg2Bytes(0x0d, stateVal);
@@ -306,7 +306,7 @@ namespace jellystem {
     function irCode(): number {
         return 0;
     }
-    
+
     /**
       * Run code when a button is pressed on the IR remote.
       */
@@ -320,7 +320,7 @@ namespace jellystem {
             while (true) {
                 irVal = irCode()
                 if (irVal > 0xff) {
-                    handler()  
+                    handler()
                 }
                 basic.pause(20)
             }
@@ -398,9 +398,9 @@ namespace jellystem {
         let angleMap: number = 0;
         if (servoType == ServoType.Servo90) {
             angleMap = pins.map(angle, 0, 90, 50, 250);
-        }else if (servoType == ServoType.Servo180) {
+        } else if (servoType == ServoType.Servo180) {
             angleMap = pins.map(angle, 0, 180, 50, 250);
-        }else if (servoType == ServoType.Servo270) {
+        } else if (servoType == ServoType.Servo270) {
             angleMap = pins.map(angle, 0, 270, 50, 250);
         }
 
@@ -433,11 +433,11 @@ namespace jellystem {
     //% group="Battery"
     //% weight=340
     //% block="battery level: %batType"
-    export function batteryLevel(batType: BatteryType) : number {
+    export function batteryLevel(batType: BatteryType): number {
         writeReg1Byte(batType);
 
         let batLevel = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false);
-        return Math.min(100, batLevel); 
+        return Math.min(100, batLevel);
     }
 
     /**
