@@ -760,6 +760,16 @@ namespace jellystem {
     // --- DISTANCE SENSOR: SHARP GP2Y0A41SK0F ---
 
     /**
+     * Units for the distance sensor reading.
+     */
+    export enum DistanceUnit {
+        //% block="cm"
+        Cm = 0,
+        //% block="mm"
+        Mm = 1
+    }
+
+    /**
      * How close is the nearest object? Near, Medium, or Far.
      */
     export enum IrZone {
@@ -772,35 +782,24 @@ namespace jellystem {
     }
 
     /**
-     * Reads how far away the nearest object is, in centimeters.
-     * Works between 4 cm and 30 cm.
+     * Reads how far away the nearest object is.
+     * Pick cm or mm as your unit.
+     * Works between 4 cm and 30 cm (or 40 mm and 300 mm).
      * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
+     * @param unit pick centimeters (cm) or millimeters (mm)
      */
     //% group="Distance sensor"
-    //% blockId=jelly_sharp_ir_distance_cm
-    //% block="distance (cm) at %pin"
+    //% blockId=jelly_sharp_ir_distance
+    //% block="distance at %pin in %unit"
     //% weight=323
-    export function readDistanceCm(pin: AnalogPin): number {
+    export function readDistance(pin: AnalogPin, unit: DistanceUnit): number {
         let raw = pins.analogReadPin(pin);
-        if (raw > 900) return 4;
-        if (raw < 80) return 30;
-        let distance = Math.round(1200 / (raw - 20));
-        if (distance < 4) return 4;
-        if (distance > 30) return 30;
-        return distance;
-    }
-
-    /**
-     * Reads how far away the nearest object is, in millimeters.
-     * Works between 40 mm and 300 mm.
-     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
-     */
-    //% group="Distance sensor"
-    //% blockId=jelly_sharp_ir_distance_mm
-    //% block="distance (mm) at %pin"
-    //% weight=322
-    export function readDistanceMm(pin: AnalogPin): number {
-        return readDistanceCm(pin) * 10;
+        if (raw > 900) return unit === DistanceUnit.Mm ? 40 : 4;
+        if (raw < 80)  return unit === DistanceUnit.Mm ? 300 : 30;
+        let cm = Math.round(1200 / (raw - 20));
+        if (cm < 4)  cm = 4;
+        if (cm > 30) cm = 30;
+        return unit === DistanceUnit.Mm ? cm * 10 : cm;
     }
 
     /**
@@ -815,7 +814,7 @@ namespace jellystem {
     //% thresholdCm.min=4 thresholdCm.max=30
     //% weight=321
     export function isCloserThan(pin: AnalogPin, thresholdCm: number): boolean {
-        return readDistanceCm(pin) < thresholdCm;
+        return readDistance(pin, DistanceUnit.Cm) < thresholdCm;
     }
 
     /**
@@ -830,12 +829,12 @@ namespace jellystem {
     //% thresholdCm.min=4 thresholdCm.max=30
     //% weight=320
     export function isFartherThan(pin: AnalogPin, thresholdCm: number): boolean {
-        return readDistanceCm(pin) > thresholdCm;
+        return readDistance(pin, DistanceUnit.Cm) > thresholdCm;
     }
 
     /**
      * Is the object Near, Medium, or Far away?
-     * Near = less than 10 cm. Medium = 10–20 cm. Far = more than 20 cm.
+     * Near = less than 10 cm. Medium = 10 to 20 cm. Far = more than 20 cm.
      * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
      */
     //% group="Distance sensor"
@@ -843,7 +842,7 @@ namespace jellystem {
     //% block="how far away at %pin"
     //% weight=319
     export function distanceZone(pin: AnalogPin): IrZone {
-        let d = readDistanceCm(pin);
+        let d = readDistance(pin, DistanceUnit.Cm);
         if (d < 10) return IrZone.Near;
         if (d <= 20) return IrZone.Medium;
         return IrZone.Far;
@@ -861,10 +860,10 @@ namespace jellystem {
     //% thresholdCm.min=4 thresholdCm.max=30
     //% weight=318
     export function onDistanceCrossed(pin: AnalogPin, thresholdCm: number, handler: () => void): void {
-        let wasClose = readDistanceCm(pin) < thresholdCm;
+        let wasClose = readDistance(pin, DistanceUnit.Cm) < thresholdCm;
         control.inBackground(() => {
             while (true) {
-                let isClose = readDistanceCm(pin) < thresholdCm;
+                let isClose = readDistance(pin, DistanceUnit.Cm) < thresholdCm;
                 if (isClose !== wasClose) {
                     wasClose = isClose;
                     handler();
