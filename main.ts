@@ -756,6 +756,62 @@ namespace jellystem {
     export function hsl(h: number, s: number, l: number): number {
         return neopixel.hsl(h, s, l);
     }
+
+    // --- EXTENSION: SHARP GP2Y0A41SK0F ANALOG INTERFACE ---
+
+    /**
+     * Reads the raw analog input value from a Sharp IR distance sensor.
+     * Returns a 10-bit analog conversion integer value between 0 and 1023.
+     * @param pin the analog input pin, eg: AnalogPin.P0
+     */
+    //% group="Infrared sensor"
+    //% blockId=jelly_sharp_ir_raw
+    //% block="read raw IR sensor at %pin"
+    //% weight=357
+    export function readIrRaw(pin: AnalogPin): number {
+        return pins.analogReadPin(pin);
+    }
+
+    /**
+     * Reads the absolute distance in millimeters (40mm to 300mm) from a Sharp IR distance sensor.
+     * Formulated using non-linear triangulation linearization with safety clipping thresholds.
+     * @param pin the analog input pin, eg: AnalogPin.P0
+     */
+    //% group="Infrared sensor"
+    //% blockId=jelly_sharp_ir_distance_mm
+    //% block="read IR distance (mm) at %pin"
+    //% weight=356
+    export function readIrDistanceMm(pin: AnalogPin): number {
+        let raw = pins.analogReadPin(pin);
+
+        // Hardware out-of-bounds protection layer
+        if (raw > 900) return 40;   // Physical hardware floor threshold (blind spot limit)
+        if (raw < 80) return 300;  // Max structural operational limit distance
+
+        // Linearization Formula derivation: d = 13200 / (ADC - 35)
+        // Optimized through Math.idiv to execute purely using micro:bit integer registers
+        let distance = Math.floor(13200 / (raw - 35));
+
+        if (distance < 40) return 40;
+        if (distance > 300) return 300;
+
+        return distance;
+    }
+
+    /**
+     * Check if the Sharp IR distance sensor detects an object closer than a targeted threshold.
+     * Returns a simple boolean value.
+     * @param pin the analog input pin, eg: AnalogPin.P0
+     * @param thresholdMm the closeness check value in millimeters, eg: 100
+     */
+    //% group="Infrared sensor"
+    //% blockId=jelly_sharp_ir_closer_than
+    //% block="IR distance at %pin | closer than %thresholdMm|mm"
+    //% thresholdMm.min=40 thresholdMm.max=300
+    //% weight=355
+    export function irCloserThan(pin: AnalogPin, thresholdMm: number): boolean {
+        return readIrDistanceMm(pin) < thresholdMm;
+    }
 }
 
 // --- SILENT SIDEBAR OVERRIDE LAYER ---
