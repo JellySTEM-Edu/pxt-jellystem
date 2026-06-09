@@ -757,60 +757,121 @@ namespace jellystem {
         return neopixel.hsl(h, s, l);
     }
 
-    // --- EXTENSION: SHARP GP2Y0A41SK0F ANALOG INTERFACE ---
+    // --- DISTANCE SENSOR: SHARP GP2Y0A41SK0F ---
 
     /**
-     * Reads the raw analog input value from a Sharp IR distance sensor.
-     * Returns a 10-bit analog conversion integer value between 0 and 1023.
-     * @param pin the analog input pin, eg: AnalogPin.P0
+     * How close is the nearest object? Near, Medium, or Far.
      */
-    //% group="Infrared sensor"
-    //% blockId=jelly_sharp_ir_raw
-    //% block="read raw IR sensor at %pin"
-    //% weight=357
-    export function readIrRaw(pin: AnalogPin): number {
-        return pins.analogReadPin(pin);
+    export enum IrZone {
+        //% block="near (less than 10 cm)"
+        Near = 0,
+        //% block="medium (10 to 20 cm)"
+        Medium = 1,
+        //% block="far (more than 20 cm)"
+        Far = 2
     }
 
     /**
-     * Reads the absolute distance in millimeters (40mm to 300mm) from a Sharp IR distance sensor.
-     * Formulated using non-linear triangulation linearization with safety clipping thresholds.
-     * @param pin the analog input pin, eg: AnalogPin.P0
+     * Reads how far away the nearest object is, in centimeters.
+     * Works between 4 cm and 30 cm.
+     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
      */
-    //% group="Infrared sensor"
-    //% blockId=jelly_sharp_ir_distance_mm
-    //% block="read IR distance (mm) at %pin"
-    //% weight=356
-    export function readIrDistanceMm(pin: AnalogPin): number {
+    //% group="Distance sensor"
+    //% blockId=jelly_sharp_ir_distance_cm
+    //% block="distance (cm) at %pin"
+    //% weight=323
+    export function readDistanceCm(pin: AnalogPin): number {
         let raw = pins.analogReadPin(pin);
-
-        // Hardware out-of-bounds protection layer
-        if (raw > 900) return 40;   // Physical hardware floor threshold (blind spot limit)
-        if (raw < 80) return 300;  // Max structural operational limit distance
-
-        // Linearization Formula derivation: d = 13200 / (ADC - 35)
-        // Optimized through Math.idiv to execute purely using micro:bit integer registers
-        let distance = Math.floor(13200 / (raw - 35));
-
-        if (distance < 40) return 40;
-        if (distance > 300) return 300;
-
+        if (raw > 900) return 4;
+        if (raw < 80) return 30;
+        let distance = Math.round(1200 / (raw - 20));
+        if (distance < 4) return 4;
+        if (distance > 30) return 30;
         return distance;
     }
 
     /**
-     * Check if the Sharp IR distance sensor detects an object closer than a targeted threshold.
-     * Returns a simple boolean value.
-     * @param pin the analog input pin, eg: AnalogPin.P0
-     * @param thresholdMm the closeness check value in millimeters, eg: 100
+     * Reads how far away the nearest object is, in millimeters.
+     * Works between 40 mm and 300 mm.
+     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
      */
-    //% group="Infrared sensor"
+    //% group="Distance sensor"
+    //% blockId=jelly_sharp_ir_distance_mm
+    //% block="distance (mm) at %pin"
+    //% weight=322
+    export function readDistanceMm(pin: AnalogPin): number {
+        return readDistanceCm(pin) * 10;
+    }
+
+    /**
+     * Is something closer than a distance you choose?
+     * Returns true or false.
+     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
+     * @param thresholdCm how close is "close", in centimeters, eg: 10
+     */
+    //% group="Distance sensor"
     //% blockId=jelly_sharp_ir_closer_than
-    //% block="IR distance at %pin | closer than %thresholdMm|mm"
-    //% thresholdMm.min=40 thresholdMm.max=300
-    //% weight=355
-    export function irCloserThan(pin: AnalogPin, thresholdMm: number): boolean {
-        return readIrDistanceMm(pin) < thresholdMm;
+    //% block="object at %pin is closer than %thresholdCm cm"
+    //% thresholdCm.min=4 thresholdCm.max=30
+    //% weight=321
+    export function isCloserThan(pin: AnalogPin, thresholdCm: number): boolean {
+        return readDistanceCm(pin) < thresholdCm;
+    }
+
+    /**
+     * Is something farther than a distance you choose?
+     * Returns true or false.
+     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
+     * @param thresholdCm how far is "far", in centimeters, eg: 20
+     */
+    //% group="Distance sensor"
+    //% blockId=jelly_sharp_ir_farther_than
+    //% block="object at %pin is farther than %thresholdCm cm"
+    //% thresholdCm.min=4 thresholdCm.max=30
+    //% weight=320
+    export function isFartherThan(pin: AnalogPin, thresholdCm: number): boolean {
+        return readDistanceCm(pin) > thresholdCm;
+    }
+
+    /**
+     * Is the object Near, Medium, or Far away?
+     * Near = less than 10 cm. Medium = 10–20 cm. Far = more than 20 cm.
+     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
+     */
+    //% group="Distance sensor"
+    //% blockId=jelly_sharp_ir_zone
+    //% block="how far away at %pin"
+    //% weight=319
+    export function distanceZone(pin: AnalogPin): IrZone {
+        let d = readDistanceCm(pin);
+        if (d < 10) return IrZone.Near;
+        if (d <= 20) return IrZone.Medium;
+        return IrZone.Far;
+    }
+
+    /**
+     * Run some code every time an object gets closer or farther than a distance you set.
+     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
+     * @param thresholdCm the distance to watch for, in centimeters, eg: 15
+     * @param handler the code to run when something crosses that distance
+     */
+    //% group="Distance sensor"
+    //% blockId=jelly_sharp_ir_on_cross
+    //% block="when object at %pin crosses %thresholdCm cm"
+    //% thresholdCm.min=4 thresholdCm.max=30
+    //% weight=318
+    export function onDistanceCrossed(pin: AnalogPin, thresholdCm: number, handler: () => void): void {
+        let wasClose = readDistanceCm(pin) < thresholdCm;
+        control.inBackground(() => {
+            while (true) {
+                let isClose = readDistanceCm(pin) < thresholdCm;
+                if (isClose !== wasClose) {
+                    wasClose = isClose;
+                    handler();
+                }
+                basic.pause(100);
+            }
+        });
     }
 }
 
