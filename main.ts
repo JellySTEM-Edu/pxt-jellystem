@@ -15,11 +15,12 @@
 * Released under the MIT License.
 */
 
-//% weight=100 color="#246C64" icon="\uf1b2" block="JellySTEM"
 
 // Tracks current signed speed (-100 to 100)
 let motor1Speed = 0
 let motor2Speed = 0
+
+//% weight=100 color="#246C64" icon="\uf1b2" block="JellySTEM"
 namespace jellystem {
     export enum MotorsDirection {
         //%block="clockwise"
