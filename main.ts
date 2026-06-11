@@ -306,7 +306,8 @@ namespace jellystem {
          */
     //% group="Motors"
     //% blockId=jellystem_motor_accelerate
-    //% block="change %motor to speed %targetSpeed\\% over %duration ms"    //% targetSpeed.min=-100 targetSpeed.max=100
+    //% block="change %motor to speed %targetSpeed\\% over %duration ms" 
+    //% targetSpeed.min=-100 targetSpeed.max=100
     //% duration.shadow=timePicker
     //% weight=85
     export function accelerateMotor(motor: Motors, targetSpeed: number, duration: number): void {
