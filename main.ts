@@ -16,6 +16,10 @@
 */
 
 //% weight=100 color="#246C64" icon="\uf1b2" block="JellySTEM"
+
+// Tracks current signed speed (-100 to 100)
+let motor1Speed = 0
+let motor2Speed = 0
 namespace jellystem {
     export enum MotorsDirection {
         //%block="clockwise"
@@ -183,15 +187,19 @@ namespace jellystem {
     //% weight=380
     export function setMotorsDirectionSpeed(motor: Motors, direction: MotorsDirection, speed: number): void {
         speed = Math.max(0, Math.min(100, speed));
-        
+
         if (motor == Motors.Motor1 || motor == Motors.AllMotors) {
-            motor1Speed = speed;
-            let value = (direction == MotorsDirection.CC) ? motor1Speed : motor1Speed + 101;
+            // SYNC STATE: Store as negative if moving counterclockwise
+            motor1Speed = (direction == MotorsDirection.CC) ? speed : -speed;
+
+            let value = (direction == MotorsDirection.CC) ? speed : speed + 101;
             writeReg2Bytes(0x09, value);
         }
         if (motor == Motors.Motor2 || motor == Motors.AllMotors) {
-            motor2Speed = speed;
-            let value = (direction == MotorsDirection.CC) ? motor2Speed : motor2Speed + 101;
+            // SYNC STATE: Store as negative if moving counterclockwise
+            motor2Speed = (direction == MotorsDirection.CC) ? speed : -speed;
+
+            let value = (direction == MotorsDirection.CC) ? speed : speed + 101;
             writeReg2Bytes(0x0a, value);
         }
     }
@@ -209,21 +217,21 @@ namespace jellystem {
     export function setMotorsSpeed(m1Speed: number, m2Speed: number): void {
         m1Speed = Math.max(-100, Math.min(100, m1Speed));
         m2Speed = Math.max(-100, Math.min(100, m2Speed));
-        
-        if (m1Speed > 0){
-            motor1Speed = m1Speed;
+
+        if (m1Speed > 0) {
+            motor1Speed = m1Speed; // SYNC STATE
             writeReg2Bytes(0x09, motor1Speed);
         } else {
-            motor1Speed = Math.abs(m1Speed);
-            writeReg2Bytes(0x09, motor1Speed + 101);
+            motor1Speed = m1Speed; // SYNC STATE (keeps the negative value)
+            writeReg2Bytes(0x09, Math.abs(m1Speed) + 101);
         }
 
-        if (m2Speed > 0){
-            motor2Speed = m2Speed;
+        if (m2Speed > 0) {
+            motor2Speed = m2Speed; // SYNC STATE
             writeReg2Bytes(0x0a, motor2Speed);
         } else {
-            motor2Speed = Math.abs(m2Speed);
-            writeReg2Bytes(0x0a, motor2Speed + 101);
+            motor2Speed = m2Speed; // SYNC STATE (keeps the negative value)
+            writeReg2Bytes(0x0a, Math.abs(m2Speed) + 101);
         }
     }
 
@@ -235,11 +243,11 @@ namespace jellystem {
     //%block="set %motor to stop"
     export function wheelStop(motor: Motors): void {
         if (motor == Motors.Motor1 || motor == Motors.AllMotors) {
-            motor1Speed = 0;
+            motor1Speed = 0; // SYNC STATE
             writeReg2Bytes(0x09, 0);
         }
         if (motor == Motors.Motor2 || motor == Motors.AllMotors) {
-            motor2Speed = 0;
+            motor2Speed = 0; // SYNC STATE
             writeReg2Bytes(0x0a, 0);
         }
     }
@@ -279,9 +287,54 @@ namespace jellystem {
 
         writeReg2Bytes(0x07, offset1);
         basic.pause(10);
-        
+
         writeReg2Bytes(0x08, offset2);
         basic.pause(10);
+    }
+
+    /**
+         * Smoothly accelerates or decelerates a motor to a target speed over a set duration.
+         * @param motor choose motor 1 or motor 2
+         * @param targetSpeed desired speed from -100 to 100, eg: 100
+         * @param duration time to reach target speed in milliseconds, eg: 1000
+         */
+    //% group="Motors"
+    //% blockId=jellystem_motor_accelerate
+    //% block="smoothly change %motor| to speed %targetSpeed| over %duration| ms"
+    //% targetSpeed.min=-100 targetSpeed.max=100
+    //% duration.shadow=timePicker
+    //% weight=85
+    export function accelerateMotor(motor: Motors, targetSpeed: number, duration: number): void {
+        // Enforce boundary safety limits using MakeCode supported Math features
+        targetSpeed = Math.max(-100, Math.min(100, targetSpeed));
+
+        // Execute in background so student execution tracks smoothly without stalling basic operations
+        control.inBackground(function () {
+            let steps = 20; // Total granular adjustments
+            let stepDelay = Math.max(10, duration / steps); // Stagger steps out safely (min 10ms)
+
+            let startSpeedM1 = motor1Speed;
+            let startSpeedM2 = motor2Speed;
+
+            for (let i = 1; i <= steps; i++) {
+                let progress = i / steps;
+
+                if (motor == Motors.Motor1 || motor == Motors.AllMotors) {
+                    motor1Speed = Math.round(startSpeedM1 + (targetSpeed - startSpeedM1) * progress);
+                    // Encode signed speed into mShield protocol layout (Positive vs Negative mapping)
+                    let m1Value = (motor1Speed >= 0) ? motor1Speed : (Math.abs(motor1Speed) + 101);
+                    writeReg2Bytes(0x09, m1Value);
+                }
+                if (motor == Motors.Motor2 || motor == Motors.AllMotors) {
+                    motor2Speed = Math.round(startSpeedM2 + (targetSpeed - startSpeedM2) * progress);
+                    // Encode signed speed into mShield protocol layout (Positive vs Negative mapping)
+                    let m2Value = (motor2Speed >= 0) ? motor2Speed : (Math.abs(motor2Speed) + 101);
+                    writeReg2Bytes(0x0a, m2Value);
+                }
+
+                basic.pause(stepDelay);
+            }
+        });
     }
 
     /**
@@ -295,7 +348,7 @@ namespace jellystem {
     //% onOff.shadow=toggleOnOff
     export function setLed(led: Leds, onOff: boolean) {
         let stateVal = onOff ? 1 : 0;
-        
+
         if (led == Leds.LED20 || led == Leds.AllLED) writeReg2Bytes(0x0b, stateVal);
         if (led == Leds.LED40 || led == Leds.AllLED) writeReg2Bytes(0x0c, stateVal);
         if (led == Leds.LED60 || led == Leds.AllLED) writeReg2Bytes(0x0d, stateVal);
@@ -306,7 +359,7 @@ namespace jellystem {
     function irCode(): number {
         return 0;
     }
-    
+
     /**
       * Run code when a button is pressed on the IR remote.
       */
@@ -320,7 +373,7 @@ namespace jellystem {
             while (true) {
                 irVal = irCode()
                 if (irVal > 0xff) {
-                    handler()  
+                    handler()
                 }
                 basic.pause(20)
             }
@@ -398,9 +451,9 @@ namespace jellystem {
         let angleMap: number = 0;
         if (servoType == ServoType.Servo90) {
             angleMap = pins.map(angle, 0, 90, 50, 250);
-        }else if (servoType == ServoType.Servo180) {
+        } else if (servoType == ServoType.Servo180) {
             angleMap = pins.map(angle, 0, 180, 50, 250);
-        }else if (servoType == ServoType.Servo270) {
+        } else if (servoType == ServoType.Servo270) {
             angleMap = pins.map(angle, 0, 270, 50, 250);
         }
 
@@ -433,11 +486,11 @@ namespace jellystem {
     //% group="Battery"
     //% weight=340
     //% block="battery level: %batType"
-    export function batteryLevel(batType: BatteryType) : number {
+    export function batteryLevel(batType: BatteryType): number {
         writeReg1Byte(batType);
 
         let batLevel = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false);
-        return Math.min(100, batLevel); 
+        return Math.min(100, batLevel);
     }
 
     /**
@@ -511,7 +564,7 @@ namespace jellystem {
     //% strip.defl=strip
     //% strip.shadow=variables_get
     //% startHue.defl=1 endHue.defl=360
-    //% weight=84 blockGap=8
+    //% weight=85 blockGap=8
     export function showRainbow(strip: neopixel.Strip, startHue: number = 1, endHue: number = 360): void {
         strip.showRainbow(startHue, endHue);
     }
@@ -527,7 +580,7 @@ namespace jellystem {
     //% block="%strip|show bar graph of %value|up to %high"
     //% strip.defl=strip
     //% strip.shadow=variables_get
-    //% weight=83 blockGap=8
+    //% weight=84 blockGap=8
     export function showBarGraph(strip: neopixel.Strip, value: number, high: number): void {
         strip.showBarGraph(value, high);
     }
@@ -560,7 +613,6 @@ namespace jellystem {
     //% strip.defl=strip
     //% strip.shadow=variables_get
     //% weight=79 blockGap=8
-    //% advanced=true
     export function show(strip: neopixel.Strip): void {
         strip.show();
     }
@@ -574,8 +626,7 @@ namespace jellystem {
     //% block="%strip|clear"
     //% strip.defl=strip
     //% strip.shadow=variables_get
-    //% weight=78 blockGap=8
-    //% advanced=true
+    //% weight=76 blockGap=8
     export function clear(strip: neopixel.Strip): void {
         strip.clear();
     }
@@ -589,7 +640,7 @@ namespace jellystem {
     //% block="%strip|set brightness %brightness"
     //% strip.defl=strip
     //% strip.shadow=variables_get
-    //% weight=77 blockGap=8
+    //% weight=59 blockGap=8
     //% advanced=true
     export function setBrightness(strip: neopixel.Strip, brightness: number): void {
         strip.setBrightness(brightness);
@@ -602,12 +653,11 @@ namespace jellystem {
      */
     //% group="NeoPixel"
     //% blockId=jelly_neopixel_rotate
-    //% block="%strip|rotate by %offset"
+    //% block="%strip|rotate pixels by %offset"
     //% strip.defl=strip
     //% strip.shadow=variables_get
     //% offset.defl=1
-    //% weight=76 blockGap=8
-    //% advanced=true
+    //% weight=39 blockGap=8
     export function rotate(strip: neopixel.Strip, offset: number = 1): void {
         strip.rotate(offset);
     }
@@ -619,12 +669,11 @@ namespace jellystem {
      */
     //% group="NeoPixel"
     //% blockId=jelly_neopixel_shift
-    //% block="%strip|shift by %offset"
+    //% block="%strip|shift pixels by %offset"
     //% strip.defl=strip
     //% strip.shadow=variables_get
     //% offset.defl=1
-    //% weight=75 blockGap=8
-    //% advanced=true
+    //% weight=40 blockGap=8
     export function shift(strip: neopixel.Strip, offset: number = 1): void {
         strip.shift(offset);
     }
@@ -639,9 +688,8 @@ namespace jellystem {
     //% block="%strip|range from %start|with %length|leds"
     //% strip.defl=strip
     //% strip.shadow=variables_get
-    //% weight=74 blockGap=8
+    //% weight=89 blockGap=8
     //% blockSetVariable=range
-    //% advanced=true
     export function range(strip: neopixel.Strip, start: number, length: number): neopixel.Strip {
         return strip.range(start, length);
     }
@@ -656,7 +704,7 @@ namespace jellystem {
     //% block="%strip|set pixel white LED at %pixeloffset|to %white"
     //% strip.defl=strip
     //% strip.shadow=variables_get
-    //% weight=73 blockGap=8
+    //% weight=80 blockGap=8
     //% advanced=true
     export function setPixelWhiteLED(strip: neopixel.Strip, pixeloffset: number, white: number): void {
         strip.setPixelWhiteLED(pixeloffset, white);
@@ -670,7 +718,7 @@ namespace jellystem {
     //% block="%strip|length"
     //% strip.defl=strip
     //% strip.shadow=variables_get
-    //% weight=72 blockGap=8
+    //% weight=60 blockGap=8
     //% advanced=true
     export function length(strip: neopixel.Strip): number {
         return strip.length();
@@ -684,7 +732,7 @@ namespace jellystem {
     //% block="%strip|ease brightness"
     //% strip.defl=strip
     //% strip.shadow=variables_get
-    //% weight=71 blockGap=8
+    //% weight=58 blockGap=8
     //% advanced=true
     export function easeBrightness(strip: neopixel.Strip): void {
         strip.easeBrightness();
@@ -699,7 +747,7 @@ namespace jellystem {
     //% block="%strip|set matrix width %width"
     //% strip.defl=strip
     //% strip.shadow=variables_get
-    //% weight=70 blockGap=8
+    //% weight=5 blockGap=8
     //% advanced=true
     export function setMatrixWidth(strip: neopixel.Strip, width: number): void {
         strip.setMatrixWidth(width);
@@ -717,7 +765,7 @@ namespace jellystem {
     //% block="%strip|set matrix color at x %x|y %y|to %rgb=neopixel_colors"
     //% strip.defl=strip
     //% strip.shadow=variables_get
-    //% weight=69 blockGap=8
+    //% weight=4 blockGap=8
     //% advanced=true
     export function setMatrixColor(strip: neopixel.Strip, x: number, y: number, rgb: number): void {
         strip.setMatrixColor(x, y, rgb);
@@ -731,7 +779,7 @@ namespace jellystem {
     //% group="NeoPixel"
     //% blockId=jelly_neopixel_colors
     //% block="%color"
-    //% weight=65 blockGap=8
+    //% weight=2 blockGap=8
     //% advanced=true
     export function colors(color: NeoPixelColors): number {
         return neopixel.colors(color);
@@ -744,7 +792,7 @@ namespace jellystem {
     //% blockId=jelly_neopixel_rgb
     //% block="red %red|green %green|blue %blue"
     //% red.min=0 red.max=255 green.min=0 green.max=255 blue.min=0 blue.max=255
-    //% weight=64 blockGap=8
+    //% weight=1 blockGap=8
     //% advanced=true
     export function rgb(red: number, green: number, blue: number): number {
         return neopixel.rgb(red, green, blue);
@@ -758,13 +806,128 @@ namespace jellystem {
     //% block="hue %h|saturation %s|luminosity %l"
     //% h.min=0 h.max=360 s.min=0 s.max=99 l.min=0 l.max=99
     //% weight=63 blockGap=8
-    //% advanced=true
     export function hsl(h: number, s: number, l: number): number {
         return neopixel.hsl(h, s, l);
+    }
+
+    // --- DISTANCE SENSOR: SHARP GP2Y0A41SK0F ---
+
+    /**
+     * Units for the distance sensor reading.
+     */
+    export enum DistanceUnit {
+        //% block="cm"
+        Cm = 0,
+        //% block="mm"
+        Mm = 1
+    }
+
+    /**
+     * How close is the nearest object? Near, Medium, or Far.
+     */
+    export enum IrZone {
+        //% block="near (less than 10 cm)"
+        Near = 0,
+        //% block="medium (10 to 20 cm)"
+        Medium = 1,
+        //% block="far (more than 20 cm)"
+        Far = 2
+    }
+
+    /**
+     * Reads how far away the nearest object is.
+     * Pick cm or mm as your unit.
+     * Works between 4 cm and 30 cm (or 40 mm and 300 mm).
+     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
+     * @param unit pick centimeters (cm) or millimeters (mm)
+     */
+    //% group="Distance sensor"
+    //% blockId=jelly_sharp_ir_distance
+    //% block="distance at %pin in %unit"
+    //% weight=323
+    export function readDistance(pin: AnalogPin, unit: DistanceUnit): number {
+        let raw = pins.analogReadPin(pin);
+        if (raw > 900) return unit === DistanceUnit.Mm ? 40 : 4;
+        if (raw < 80) return unit === DistanceUnit.Mm ? 300 : 30;
+        let cm = Math.round(1200 / (raw - 20));
+        if (cm < 4) cm = 4;
+        if (cm > 30) cm = 30;
+        return unit === DistanceUnit.Mm ? cm * 10 : cm;
+    }
+
+    /**
+     * Is something closer than a distance you choose?
+     * Returns true or false.
+     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
+     * @param thresholdCm how close is "close", in centimeters, eg: 10
+     */
+    //% group="Distance sensor"
+    //% blockId=jelly_sharp_ir_closer_than
+    //% block="object at %pin is closer than %thresholdCm cm"
+    //% thresholdCm.min=4 thresholdCm.max=30
+    //% weight=321
+    export function isCloserThan(pin: AnalogPin, thresholdCm: number): boolean {
+        return readDistance(pin, DistanceUnit.Cm) < thresholdCm;
+    }
+
+    /**
+     * Is something farther than a distance you choose?
+     * Returns true or false.
+     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
+     * @param thresholdCm how far is "far", in centimeters, eg: 20
+     */
+    //% group="Distance sensor"
+    //% blockId=jelly_sharp_ir_farther_than
+    //% block="object at %pin is farther than %thresholdCm cm"
+    //% thresholdCm.min=4 thresholdCm.max=30
+    //% weight=320
+    export function isFartherThan(pin: AnalogPin, thresholdCm: number): boolean {
+        return readDistance(pin, DistanceUnit.Cm) > thresholdCm;
+    }
+
+    /**
+     * Is the object Near, Medium, or Far away?
+     * Near = less than 10 cm. Medium = 10 to 20 cm. Far = more than 20 cm.
+     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
+     */
+    //% group="Distance sensor"
+    //% blockId=jelly_sharp_ir_zone
+    //% block="how far away at %pin"
+    //% weight=319
+    export function distanceZone(pin: AnalogPin): IrZone {
+        let d = readDistance(pin, DistanceUnit.Cm);
+        if (d < 10) return IrZone.Near;
+        if (d <= 20) return IrZone.Medium;
+        return IrZone.Far;
+    }
+
+    /**
+     * Run some code every time an object gets closer or farther than a distance you set.
+     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
+     * @param thresholdCm the distance to watch for, in centimeters, eg: 15
+     * @param handler the code to run when something crosses that distance
+     */
+    //% group="Distance sensor"
+    //% blockId=jelly_sharp_ir_on_cross
+    //% block="when object at %pin crosses %thresholdCm cm"
+    //% thresholdCm.min=4 thresholdCm.max=30
+    //% weight=318
+    export function onDistanceCrossed(pin: AnalogPin, thresholdCm: number, handler: () => void): void {
+        let wasClose = readDistance(pin, DistanceUnit.Cm) < thresholdCm;
+        control.inBackground(() => {
+            while (true) {
+                let isClose = readDistance(pin, DistanceUnit.Cm) < thresholdCm;
+                if (isClose !== wasClose) {
+                    wasClose = isClose;
+                    handler();
+                }
+                basic.pause(100);
+            }
+        });
     }
 }
 
 // --- SILENT SIDEBAR OVERRIDE LAYER ---
 // Forces the background tracking dependency category tab out of sight.
-//% blockHidden=true
+//% deprecated=true
 namespace neopixel { }
