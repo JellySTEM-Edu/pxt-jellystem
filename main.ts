@@ -15,7 +15,6 @@
 * Released under the MIT License.
 */
 
-
 // Tracks current signed speed (-100 to 100)
 let motor1Speed = 0
 let motor2Speed = 0
