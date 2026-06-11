@@ -328,19 +328,39 @@ namespace jellystem {
             let startSpeedM1 = motor1Speed;
             let startSpeedM2 = motor2Speed;
 
+            // If the current speed is below the minimum (including 0), snap the interpolation
+            // start point up to MIN so no intermediate step drives into the whining dead zone.
+            // Only applied when accelerating toward a non-zero target.
+            let effectiveStartM1 = (targetSpeed !== 0 && Math.abs(startSpeedM1) < MIN_MOTOR_SPEED)
+                ? (targetSpeed > 0 ? MIN_MOTOR_SPEED : -MIN_MOTOR_SPEED)
+                : startSpeedM1;
+            let effectiveStartM2 = (targetSpeed !== 0 && Math.abs(startSpeedM2) < MIN_MOTOR_SPEED)
+                ? (targetSpeed > 0 ? MIN_MOTOR_SPEED : -MIN_MOTOR_SPEED)
+                : startSpeedM2;
+
             for (let i = 1; i <= steps; i++) {
                 let progress = i / steps;
 
                 if (motor == Motors.Motor1 || motor == Motors.AllMotors) {
-                    motor1Speed = Math.round(startSpeedM1 + (targetSpeed - startSpeedM1) * progress);
+                    motor1Speed = Math.round(effectiveStartM1 + (targetSpeed - effectiveStartM1) * progress);
+                    // Safety net: snap any value that still lands in the dead zone.
+                    // When decelerating to 0, snap to 0 cleanly; otherwise snap up to MIN.
+                    let m1Write = motor1Speed;
+                    if (Math.abs(m1Write) > 0 && Math.abs(m1Write) < MIN_MOTOR_SPEED) {
+                        m1Write = (targetSpeed === 0) ? 0 : (m1Write > 0 ? MIN_MOTOR_SPEED : -MIN_MOTOR_SPEED);
+                    }
                     // Encode signed speed into mShield protocol layout (Positive vs Negative mapping)
-                    let m1Value = (motor1Speed >= 0) ? motor1Speed : (Math.abs(motor1Speed) + 101);
+                    let m1Value = (m1Write >= 0) ? m1Write : (Math.abs(m1Write) + 101);
                     writeReg2Bytes(0x09, m1Value);
                 }
                 if (motor == Motors.Motor2 || motor == Motors.AllMotors) {
-                    motor2Speed = Math.round(startSpeedM2 + (targetSpeed - startSpeedM2) * progress);
+                    motor2Speed = Math.round(effectiveStartM2 + (targetSpeed - effectiveStartM2) * progress);
+                    let m2Write = motor2Speed;
+                    if (Math.abs(m2Write) > 0 && Math.abs(m2Write) < MIN_MOTOR_SPEED) {
+                        m2Write = (targetSpeed === 0) ? 0 : (m2Write > 0 ? MIN_MOTOR_SPEED : -MIN_MOTOR_SPEED);
+                    }
                     // Encode signed speed into mShield protocol layout (Positive vs Negative mapping)
-                    let m2Value = (motor2Speed >= 0) ? motor2Speed : (Math.abs(motor2Speed) + 101);
+                    let m2Value = (m2Write >= 0) ? m2Write : (Math.abs(m2Write) + 101);
                     writeReg2Bytes(0x0a, m2Value);
                 }
 
