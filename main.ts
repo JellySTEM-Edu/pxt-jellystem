@@ -147,7 +147,7 @@ namespace jellystem {
     let motor2Speed = 0
 
     // Minimum non-zero speed sent to motors. Values below this cause PWM whining without movement.
-    const MIN_MOTOR_SPEED = 25
+    const MIN_MOTOR_SPEED = 40
 
     // For Ir receiver
     let irVal = 0
