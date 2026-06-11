@@ -15,10 +15,6 @@
 * Released under the MIT License.
 */
 
-// Tracks current signed speed (-100 to 100)
-let motor1Speed = 0
-let motor2Speed = 0
-
 //% weight=100 color="#246C64" icon="\uf1b2" block="JellySTEM"
 namespace jellystem {
     export enum MotorsDirection {
@@ -146,8 +142,12 @@ namespace jellystem {
         LithiumBattery2 = 6
     }
 
+    // Tracks current signed speed (-100 to 100) for each motor; used by accelerateMotor
     let motor1Speed = 0
     let motor2Speed = 0
+
+    // Minimum non-zero speed sent to motors. Values below this cause PWM whining without movement.
+    const MIN_MOTOR_SPEED = 25
 
     // For Ir receiver
     let irVal = 0
@@ -221,17 +221,23 @@ namespace jellystem {
         if (m1Speed > 0) {
             motor1Speed = m1Speed; // SYNC STATE
             writeReg2Bytes(0x09, motor1Speed);
-        } else {
+        } else if (m1Speed < 0) {
             motor1Speed = m1Speed; // SYNC STATE (keeps the negative value)
             writeReg2Bytes(0x09, Math.abs(m1Speed) + 101);
+        } else {
+            motor1Speed = 0; // SYNC STATE
+            writeReg2Bytes(0x09, 0); // Explicit stop — register value 0, not 101
         }
 
         if (m2Speed > 0) {
             motor2Speed = m2Speed; // SYNC STATE
             writeReg2Bytes(0x0a, motor2Speed);
-        } else {
+        } else if (m2Speed < 0) {
             motor2Speed = m2Speed; // SYNC STATE (keeps the negative value)
             writeReg2Bytes(0x0a, Math.abs(m2Speed) + 101);
+        } else {
+            motor2Speed = 0; // SYNC STATE
+            writeReg2Bytes(0x0a, 0); // Explicit stop — register value 0, not 101
         }
     }
 
@@ -300,13 +306,19 @@ namespace jellystem {
          */
     //% group="Motors"
     //% blockId=jellystem_motor_accelerate
-    //% block="smoothly change %motor| to speed %targetSpeed| over %duration| ms"
+    //% block="change %motor| to speed %targetSpeed|% over %duration| ms"
     //% targetSpeed.min=-100 targetSpeed.max=100
     //% duration.shadow=timePicker
     //% weight=85
     export function accelerateMotor(motor: Motors, targetSpeed: number, duration: number): void {
         // Enforce boundary safety limits using MakeCode supported Math features
         targetSpeed = Math.max(-100, Math.min(100, targetSpeed));
+
+        // Prevent whining: snap any non-zero target below the minimum to the minimum.
+        // Speed 0 is always allowed for a clean stop.
+        if (Math.abs(targetSpeed) > 0 && Math.abs(targetSpeed) < MIN_MOTOR_SPEED) {
+            targetSpeed = targetSpeed > 0 ? MIN_MOTOR_SPEED : -MIN_MOTOR_SPEED;
+        }
 
         // Execute in background so student execution tracks smoothly without stalling basic operations
         control.inBackground(function () {
@@ -450,10 +462,13 @@ namespace jellystem {
     export function extendServoControl(index: PwmAndServoIndex, servoType: ServoType, angle: number): void {
         let angleMap: number = 0;
         if (servoType == ServoType.Servo90) {
+            angle = Math.max(0, Math.min(90, angle));
             angleMap = pins.map(angle, 0, 90, 50, 250);
         } else if (servoType == ServoType.Servo180) {
+            angle = Math.max(0, Math.min(180, angle));
             angleMap = pins.map(angle, 0, 180, 50, 250);
         } else if (servoType == ServoType.Servo270) {
+            angle = Math.max(0, Math.min(270, angle));
             angleMap = pins.map(angle, 0, 270, 50, 250);
         }
 
@@ -848,34 +863,28 @@ namespace jellystem {
         return unit === DistanceUnit.Mm ? cm * 10 : cm;
     }
 
-    /**
-     * Is something closer than a distance you choose?
-     * Returns true or false.
-     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
-     * @param thresholdCm how close is "close", in centimeters, eg: 10
-     */
-    //% group="Distance sensor"
-    //% blockId=jelly_sharp_ir_closer_than
-    //% block="%pin closer than %thresholdCm cm?"
-    //% thresholdCm.min=4 thresholdCm.max=30
-    //% weight=321
-    export function isCloserThan(pin: AnalogPin, thresholdCm: number): boolean {
-        return readDistance(pin, DistanceUnit.Cm) < thresholdCm;
+    export enum DistanceComparison {
+        //% block="closer"
+        Closer = 0,
+        //% block="farther"
+        Farther = 1
     }
 
     /**
-     * Is something farther than a distance you choose?
+     * Is something closer or farther than a distance you choose?
      * Returns true or false.
      * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
-     * @param thresholdCm how far is "far", in centimeters, eg: 20
+     * @param comparison choose closer or farther
+     * @param thresholdCm the distance to compare against, in centimeters, eg: 10
      */
     //% group="Distance sensor"
-    //% blockId=jelly_sharp_ir_farther_than
-    //% block="%pin farther than %thresholdCm cm?"
+    //% blockId=jelly_sharp_ir_check_distance
+    //% block="%pin|is %comparison than %thresholdCm cm?"
     //% thresholdCm.min=4 thresholdCm.max=30
-    //% weight=320
-    export function isFartherThan(pin: AnalogPin, thresholdCm: number): boolean {
-        return readDistance(pin, DistanceUnit.Cm) > thresholdCm;
+    //% weight=321
+    export function checkDistance(pin: AnalogPin, comparison: DistanceComparison, thresholdCm: number): boolean {
+        let dist = readDistance(pin, DistanceUnit.Cm);
+        return comparison === DistanceComparison.Closer ? dist < thresholdCm : dist > thresholdCm;
     }
 
     /**
