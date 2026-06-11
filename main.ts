@@ -819,19 +819,9 @@ namespace jellystem {
         //% block="cm"
         Cm = 0,
         //% block="mm"
-        Mm = 1
-    }
-
-    /**
-     * How close is the nearest object? Near, Medium, or Far.
-     */
-    export enum IrZone {
-        //% block="near (less than 10 cm)"
-        Near = 0,
-        //% block="medium (10 to 20 cm)"
-        Medium = 1,
-        //% block="far (more than 20 cm)"
-        Far = 2
+        Mm = 1,
+        //% block="raw"
+        Raw = 2
     }
 
     /**
@@ -847,6 +837,9 @@ namespace jellystem {
     //% weight=323
     export function readDistance(pin: AnalogPin, unit: DistanceUnit): number {
         let raw = pins.analogReadPin(pin);
+        if (unit === DistanceUnit.Raw) {
+            return raw;
+        }
         if (raw > 900) return unit === DistanceUnit.Mm ? 40 : 4;
         if (raw < 80) return unit === DistanceUnit.Mm ? 300 : 30;
         let cm = Math.round(1200 / (raw - 20));
@@ -863,7 +856,7 @@ namespace jellystem {
      */
     //% group="Distance sensor"
     //% blockId=jelly_sharp_ir_closer_than
-    //% block="object at %pin is closer than %thresholdCm cm"
+    //% block="%pin closer than %thresholdCm cm?"
     //% thresholdCm.min=4 thresholdCm.max=30
     //% weight=321
     export function isCloserThan(pin: AnalogPin, thresholdCm: number): boolean {
@@ -878,27 +871,11 @@ namespace jellystem {
      */
     //% group="Distance sensor"
     //% blockId=jelly_sharp_ir_farther_than
-    //% block="object at %pin is farther than %thresholdCm cm"
+    //% block="%pin farther than %thresholdCm cm?"
     //% thresholdCm.min=4 thresholdCm.max=30
     //% weight=320
     export function isFartherThan(pin: AnalogPin, thresholdCm: number): boolean {
         return readDistance(pin, DistanceUnit.Cm) > thresholdCm;
-    }
-
-    /**
-     * Is the object Near, Medium, or Far away?
-     * Near = less than 10 cm. Medium = 10 to 20 cm. Far = more than 20 cm.
-     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
-     */
-    //% group="Distance sensor"
-    //% blockId=jelly_sharp_ir_zone
-    //% block="how far away at %pin"
-    //% weight=319
-    export function distanceZone(pin: AnalogPin): IrZone {
-        let d = readDistance(pin, DistanceUnit.Cm);
-        if (d < 10) return IrZone.Near;
-        if (d <= 20) return IrZone.Medium;
-        return IrZone.Far;
     }
 
     /**
@@ -909,7 +886,7 @@ namespace jellystem {
      */
     //% group="Distance sensor"
     //% blockId=jelly_sharp_ir_on_cross
-    //% block="when object at %pin crosses %thresholdCm cm"
+    //% block="on %pin crosses %thresholdCm cm"
     //% thresholdCm.min=4 thresholdCm.max=30
     //% weight=318
     export function onDistanceCrossed(pin: AnalogPin, thresholdCm: number, handler: () => void): void {
