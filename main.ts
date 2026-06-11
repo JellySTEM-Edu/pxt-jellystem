@@ -16,6 +16,10 @@
 */
 
 //% weight=100 color="#246C64" icon="\uf1b2" block="JellySTEM"
+
+// Tracks current signed speed (-100 to 100)
+let motor1Speed = 0
+let motor2Speed = 0
 namespace jellystem {
     export enum MotorsDirection {
         //%block="clockwise"
@@ -185,13 +189,17 @@ namespace jellystem {
         speed = Math.max(0, Math.min(100, speed));
 
         if (motor == Motors.Motor1 || motor == Motors.AllMotors) {
-            motor1Speed = speed;
-            let value = (direction == MotorsDirection.CC) ? motor1Speed : motor1Speed + 101;
+            // SYNC STATE: Store as negative if moving counterclockwise
+            motor1Speed = (direction == MotorsDirection.CC) ? speed : -speed;
+
+            let value = (direction == MotorsDirection.CC) ? speed : speed + 101;
             writeReg2Bytes(0x09, value);
         }
         if (motor == Motors.Motor2 || motor == Motors.AllMotors) {
-            motor2Speed = speed;
-            let value = (direction == MotorsDirection.CC) ? motor2Speed : motor2Speed + 101;
+            // SYNC STATE: Store as negative if moving counterclockwise
+            motor2Speed = (direction == MotorsDirection.CC) ? speed : -speed;
+
+            let value = (direction == MotorsDirection.CC) ? speed : speed + 101;
             writeReg2Bytes(0x0a, value);
         }
     }
@@ -211,19 +219,19 @@ namespace jellystem {
         m2Speed = Math.max(-100, Math.min(100, m2Speed));
 
         if (m1Speed > 0) {
-            motor1Speed = m1Speed;
+            motor1Speed = m1Speed; // SYNC STATE
             writeReg2Bytes(0x09, motor1Speed);
         } else {
-            motor1Speed = Math.abs(m1Speed);
-            writeReg2Bytes(0x09, motor1Speed + 101);
+            motor1Speed = m1Speed; // SYNC STATE (keeps the negative value)
+            writeReg2Bytes(0x09, Math.abs(m1Speed) + 101);
         }
 
         if (m2Speed > 0) {
-            motor2Speed = m2Speed;
+            motor2Speed = m2Speed; // SYNC STATE
             writeReg2Bytes(0x0a, motor2Speed);
         } else {
-            motor2Speed = Math.abs(m2Speed);
-            writeReg2Bytes(0x0a, motor2Speed + 101);
+            motor2Speed = m2Speed; // SYNC STATE (keeps the negative value)
+            writeReg2Bytes(0x0a, Math.abs(m2Speed) + 101);
         }
     }
 
@@ -235,11 +243,11 @@ namespace jellystem {
     //%block="set %motor to stop"
     export function wheelStop(motor: Motors): void {
         if (motor == Motors.Motor1 || motor == Motors.AllMotors) {
-            motor1Speed = 0;
+            motor1Speed = 0; // SYNC STATE
             writeReg2Bytes(0x09, 0);
         }
         if (motor == Motors.Motor2 || motor == Motors.AllMotors) {
-            motor2Speed = 0;
+            motor2Speed = 0; // SYNC STATE
             writeReg2Bytes(0x0a, 0);
         }
     }
@@ -282,6 +290,51 @@ namespace jellystem {
 
         writeReg2Bytes(0x08, offset2);
         basic.pause(10);
+    }
+
+    /**
+         * Smoothly accelerates or decelerates a motor to a target speed over a set duration.
+         * @param motor choose motor 1 or motor 2
+         * @param targetSpeed desired speed from -100 to 100, eg: 100
+         * @param duration time to reach target speed in milliseconds, eg: 1000
+         */
+    //% group="Motors"
+    //% blockId=jellystem_motor_accelerate
+    //% block="smoothly change %motor| to speed %targetSpeed| over %duration| ms"
+    //% targetSpeed.min=-100 targetSpeed.max=100
+    //% duration.shadow=timePicker
+    //% weight=85
+    export function accelerateMotor(motor: Motors, targetSpeed: number, duration: number): void {
+        // Enforce boundary safety limits using MakeCode supported Math features
+        targetSpeed = Math.max(-100, Math.min(100, targetSpeed));
+
+        // Execute in background so student execution tracks smoothly without stalling basic operations
+        control.inBackground(function () {
+            let steps = 20; // Total granular adjustments
+            let stepDelay = Math.max(10, duration / steps); // Stagger steps out safely (min 10ms)
+
+            let startSpeedM1 = motor1Speed;
+            let startSpeedM2 = motor2Speed;
+
+            for (let i = 1; i <= steps; i++) {
+                let progress = i / steps;
+
+                if (motor == Motors.Motor1 || motor == Motors.AllMotors) {
+                    motor1Speed = Math.round(startSpeedM1 + (targetSpeed - startSpeedM1) * progress);
+                    // Encode signed speed into mShield protocol layout (Positive vs Negative mapping)
+                    let m1Value = (motor1Speed >= 0) ? motor1Speed : (Math.abs(motor1Speed) + 101);
+                    writeReg2Bytes(0x09, m1Value);
+                }
+                if (motor == Motors.Motor2 || motor == Motors.AllMotors) {
+                    motor2Speed = Math.round(startSpeedM2 + (targetSpeed - startSpeedM2) * progress);
+                    // Encode signed speed into mShield protocol layout (Positive vs Negative mapping)
+                    let m2Value = (motor2Speed >= 0) ? motor2Speed : (Math.abs(motor2Speed) + 101);
+                    writeReg2Bytes(0x0a, m2Value);
+                }
+
+                basic.pause(stepDelay);
+            }
+        });
     }
 
     /**
@@ -795,9 +848,9 @@ namespace jellystem {
     export function readDistance(pin: AnalogPin, unit: DistanceUnit): number {
         let raw = pins.analogReadPin(pin);
         if (raw > 900) return unit === DistanceUnit.Mm ? 40 : 4;
-        if (raw < 80)  return unit === DistanceUnit.Mm ? 300 : 30;
+        if (raw < 80) return unit === DistanceUnit.Mm ? 300 : 30;
         let cm = Math.round(1200 / (raw - 20));
-        if (cm < 4)  cm = 4;
+        if (cm < 4) cm = 4;
         if (cm > 30) cm = 30;
         return unit === DistanceUnit.Mm ? cm * 10 : cm;
     }
