@@ -896,46 +896,54 @@ namespace jellystem {
         Farther = 1
     }
 
-    /**
-     * Check if an object is closer or farther than a distance you choose.
-     * Pick the unit to match — cm, mm, or raw.
-     * Returns true or false.
-     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
-     * @param comparison closer or farther
-     * @param threshold the distance to check against, eg: 15
-     * @param unit the unit for the threshold value
-     */
     //% group="Distance sensor"
     //% blockId=jelly_sharp_ir_check_distance
     //% block="%pin|%comparison|than %threshold|%unit"
     //% weight=321
     export function checkDistance(pin: AnalogPin, comparison: DistanceComparison, threshold: number, unit: DistanceUnit): boolean {
-        let d = readDistance(pin, unit);
-        if (comparison === DistanceComparison.Closer) return d > 0 && d < threshold;
-        return d > threshold;
+        let raw = pins.analogReadPin(pin);
+        let d = readDistance(pin, unit); // Still handles the standard 4-40cm conversion
+
+        if (comparison === DistanceComparison.Closer) {
+            // THE FIX: True if it's a valid close distance OR trapped in the raw voltage blind spot spike
+            let inStandardRange = (d > 0 && d < threshold);
+            let inBlindSpot = (d === 0 && raw > 300); // Override threshold
+
+            return inStandardRange || inBlindSpot;
+        }
+
+        // For 'Farther', it's true if the distance is greater than threshold, or if it's 0 (meaning out of range)
+        return d > threshold || d === 0;
     }
 
     /**
-     * Run some code every time the sensor crosses a distance you set.
-     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
-     * @param comparison closer or farther
-     * @param threshold the distance to watch for, eg: 15
-     * @param unit the unit for the threshold value
-     * @param handler the code to run when the threshold is crossed
-     */
+         * Run some code every time the sensor crosses a distance you set.
+         * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
+         * @param comparison closer or farther
+         * @param threshold the distance to watch for, eg: 15
+         * @param unit the unit for the threshold value
+         * @param handler the code to run when the threshold is crossed
+         */
     //% group="Distance sensor"
     //% blockId=jelly_sharp_ir_on_cross
     //% block="on %pin|%comparison|than %threshold|%unit"
     //% weight=318
     export function onDistanceCrossed(pin: AnalogPin, comparison: DistanceComparison, threshold: number, unit: DistanceUnit, handler: () => void): void {
+        // Capture the initial state using our upgraded checkDistance (which includes the blind spot safety net)
         let wasMet = checkDistance(pin, comparison, threshold, unit);
+
         control.inBackground(() => {
             while (true) {
+                // Continuously poll the upgraded logic
                 let isMet = checkDistance(pin, comparison, threshold, unit);
+
+                // If the state changes (e.g., hand enters the <10cm zone OR the blind spot)
                 if (isMet !== wasMet) {
                     wasMet = isMet;
-                    handler();
+                    handler(); // Fire the student's code!
                 }
+
+                // 100ms pause prevents the background loop from lagging the rest of the Micro:bit
                 basic.pause(100);
             }
         });
