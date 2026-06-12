@@ -847,6 +847,9 @@ namespace jellystem {
 
     // --- DISTANCE SENSOR: SHARP GP2Y0A41SK0F ---
 
+    /**
+     * Units for the distance sensor reading.
+     */
     export enum DistanceUnit {
         //% block="cm"
         Cm = 0,
@@ -856,6 +859,13 @@ namespace jellystem {
         Raw = 2
     }
 
+    /**
+     * Reads how far away the nearest object is.
+     * Pick cm, mm, or raw as your unit.
+     * Returns 0 if nothing is in range.
+     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
+     * @param unit pick cm, mm, or raw
+     */
     //% group="Distance sensor"
     //% blockId=jelly_sharp_ir_distance
     //% block="distance at %pin in %unit"
@@ -869,16 +879,28 @@ namespace jellystem {
         return unit === DistanceUnit.Mm ? cm * 10 : cm;
     }
 
+    /**
+     * Direction to compare distance.
+     */
     export enum DistanceComparison {
-        //% block="closer than"
+        //% block="closer"
         Closer = 0,
-        //% block="farther than"
+        //% block="farther"
         Farther = 1
     }
 
+    /**
+     * Check if an object is closer or farther than a distance you choose.
+     * Pick the unit to match — cm, mm, or raw.
+     * Returns true or false.
+     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
+     * @param comparison closer or farther
+     * @param threshold the distance to check against, eg: 15
+     * @param unit the unit for the threshold value
+     */
     //% group="Distance sensor"
     //% blockId=jelly_sharp_ir_check_distance
-    //% block="%pin is %comparison %threshold %unit"
+    //% block="%pin is %comparison than %threshold %unit"
     //% weight=321
     export function checkDistance(pin: AnalogPin, comparison: DistanceComparison, threshold: number, unit: DistanceUnit): boolean {
         let d = readDistance(pin, unit);
@@ -886,9 +908,17 @@ namespace jellystem {
         return d > threshold;
     }
 
+    /**
+     * Run some code every time the sensor crosses a distance you set.
+     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
+     * @param comparison closer or farther
+     * @param threshold the distance to watch for, eg: 15
+     * @param unit the unit for the threshold value
+     * @param handler the code to run when the threshold is crossed
+     */
     //% group="Distance sensor"
     //% blockId=jelly_sharp_ir_on_cross
-    //% block="on %pin is %comparison %threshold %unit"
+    //% block="on %pin %comparison than %threshold %unit"
     //% weight=318
     export function onDistanceCrossed(pin: AnalogPin, comparison: DistanceComparison, threshold: number, unit: DistanceUnit, handler: () => void): void {
         let wasMet = checkDistance(pin, comparison, threshold, unit);
@@ -902,7 +932,7 @@ namespace jellystem {
                 basic.pause(100);
             }
         });
-    }
+    } 1
 }
 
 // --- SILENT SIDEBAR OVERRIDE LAYER ---
