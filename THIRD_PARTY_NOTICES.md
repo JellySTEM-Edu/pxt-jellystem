@@ -41,3 +41,22 @@ Copyright (c) Microsoft Corporation
 
 Changes by JellySTEM:
 - Linked as a background library dependency to re-export addressable RGB LED control blocks inside the unified JellySTEM block drawer.
+
+---
+
+Project name:
+Microsoft pxt-common-packages (servo)
+
+Repository:
+github.com/microsoft/pxt-common-packages/libs/servo
+
+License:
+MIT License
+
+Original copyright:
+Copyright (c) Microsoft Corporation
+
+Changes by JellySTEM:
+- Linked as a versioned dependency
+- e-exposed its blocks inside the unified JellySTEM drawer via thin wrapper functions under the "Servo" group. 
+- The upstream servo drawer is suppressed using //% deprecated=true.

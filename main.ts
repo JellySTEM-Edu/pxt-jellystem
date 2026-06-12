@@ -513,6 +513,103 @@ namespace jellystem {
         extendServoControl(index, ServoType.Servo180, speed)
     }
 
+    // --- SERVO (via dependency: microsoft/pxt-common-packages/libs/servo) ---
+
+    /**
+     * Pins that support servo output.
+     */
+    export enum ServoPin {
+        //% block="P0"
+        P0 = 0,
+        //% block="P1"
+        P1 = 1,
+        //% block="P2"
+        P2 = 2
+    }
+
+    function getServo(pin: ServoPin): servos.Servo {
+        if (pin === ServoPin.P1) return servos.P1;
+        if (pin === ServoPin.P2) return servos.P2;
+        return servos.P0;
+    }
+
+    /**
+     * Turn a servo to an angle you choose.
+     * 0° is all the way left, 90° is the middle, 180° is all the way right.
+     * @param pin the pin the servo is plugged into
+     * @param degrees the angle to turn to, eg: 90
+     */
+    //% group="Servo"
+    //% blockId=jelly_servo_set_angle
+    //% block="set servo %pin to %degrees °"
+    //% degrees.min=0 degrees.max=180 degrees.defl=90
+    //% weight=335
+    export function servoSetAngle(pin: ServoPin, degrees: number): void {
+        getServo(pin).setAngle(degrees);
+    }
+
+    /**
+     * Run a continuous (360°) servo at a speed you choose.
+     * Positive = forward, negative = backward, 0 = stop.
+     * @param pin the pin the servo is plugged into
+     * @param speed the speed from -100% to 100%, eg: 50
+     */
+    //% group="Servo"
+    //% blockId=jelly_servo_run
+    //% block="continuous servo %pin run at %speed \\%"
+    //% speed.min=-100 speed.max=100 speed.defl=50
+    //% weight=334
+    export function servoRun(pin: ServoPin, speed: number): void {
+        getServo(pin).run(speed);
+    }
+
+    /**
+     * Stop a servo. It will stay where it is and won't hold its position.
+     * @param pin the pin the servo is plugged into
+     */
+    //% group="Servo"
+    //% blockId=jelly_servo_stop
+    //% block="stop servo %pin"
+    //% weight=333
+    export function servoStop(pin: ServoPin): void {
+        getServo(pin).stop();
+    }
+
+    /**
+     * Set the servo pulse width directly in microseconds.
+     * Useful for fine-tuning or non-standard servos.
+     * 1000 μs = far left, 1500 μs = center, 2000 μs = far right.
+     * @param pin the pin the servo is plugged into
+     * @param micros the pulse width in microseconds, eg: 1500
+     */
+    //% group="Servo"
+    //% blockId=jelly_servo_set_pulse
+    //% block="set servo %pin pulse to %micros μs"
+    //% micros.min=500 micros.max=2500 micros.defl=1500
+    //% weight=332
+    //% advanced=true
+    export function servoSetPulse(pin: ServoPin, micros: number): void {
+        getServo(pin).setPulse(micros);
+    }
+
+    /**
+     * Set the min and max angle limits for a servo.
+     * Useful if your servo doesn't go all the way to 0° or 180°.
+     * @param pin the pin the servo is plugged into
+     * @param minAngle the minimum angle, eg: 0
+     * @param maxAngle the maximum angle, eg: 180
+     */
+    //% group="Servo"
+    //% blockId=jelly_servo_set_range
+    //% block="set servo %pin range %minAngle to %maxAngle °"
+    //% minAngle.min=0 minAngle.max=90 minAngle.defl=0
+    //% maxAngle.min=90 maxAngle.max=180 maxAngle.defl=180
+    //% weight=331
+    //% advanced=true
+    export function servoSetRange(pin: ServoPin, minAngle: number, maxAngle: number): void {
+        getServo(pin).setRange(minAngle, maxAngle);
+    }
+
     /**
      * Sets the battery type and returns the battery level.
      * @param batType - Type of battery. 
@@ -972,3 +1069,6 @@ namespace jellystem {
 // Forces the background tracking dependency category tab out of sight.
 //% deprecated=true
 namespace neopixel { }
+
+//% deprecated=true
+namespace servos { }
