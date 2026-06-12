@@ -902,18 +902,20 @@ namespace jellystem {
     //% weight=321
     export function checkDistance(pin: AnalogPin, comparison: DistanceComparison, threshold: number, unit: DistanceUnit): boolean {
         let raw = pins.analogReadPin(pin);
-        let d = readDistance(pin, unit); // Still handles the standard 4-40cm conversion
+        let d = readDistance(pin, unit);
 
         if (comparison === DistanceComparison.Closer) {
-            // THE FIX: True if it's a valid close distance OR trapped in the raw voltage blind spot spike
             let inStandardRange = (d > 0 && d < threshold);
-            let inBlindSpot = (d === 0 && raw > 300); // Override threshold
-
+            let inBlindSpot = (d === 0 && raw > 300);
             return inStandardRange || inBlindSpot;
-        }
+        } else {
+            // THE FIX: It is only 'Farther' if it's past the threshold,
+            // OR if it reads 0 AND raw voltage is low (meaning the room is truly empty)
+            let genuinelyFar = (d > threshold);
+            let nothingThere = (d === 0 && raw <= 300);
 
-        // For 'Farther', it's true if the distance is greater than threshold, or if it's 0 (meaning out of range)
-        return d > threshold || d === 0;
+            return genuinelyFar || nothingThere;
+        }
     }
 
     /**
