@@ -860,12 +860,12 @@ namespace jellystem {
     }
 
     /**
-     * Reads how far away the nearest object is.
-     * Pick cm, mm, or raw as your unit.
-     * Returns 0 if nothing is in range.
-     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
-     * @param unit pick cm, mm, or raw
-     */
+         * Reads how far away the nearest object is.
+         * Pick cm, mm, or raw as your unit.
+         * Returns 0 if nothing is in range.
+         * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
+         * @param unit pick cm, mm, or raw
+         */
     //% group="Distance sensor"
     //% blockId=jelly_sharp_ir_distance
     //% block="distance at %pin in %unit"
@@ -873,9 +873,16 @@ namespace jellystem {
     export function readDistance(pin: AnalogPin, unit: DistanceUnit): number {
         let raw = pins.analogReadPin(pin);
         if (unit === DistanceUnit.Raw) return raw;
-        if (raw > 900 || raw < 80) return 0;
+
+        // Safety: Prevent division by zero or negative numbers if raw is too low
+        if (raw <= 20) return 0;
+
+        // Linearize raw voltage into centimeters
         let cm = Math.round(1200 / (raw - 20));
-        if (cm < 4 || cm > 30) return 0;
+
+        // RECALIBRATED: Expanded window limits to accept wider real-world values (4cm - 40cm)
+        if (cm < 4 || cm > 40) return 0;
+
         return unit === DistanceUnit.Mm ? cm * 10 : cm;
     }
 
