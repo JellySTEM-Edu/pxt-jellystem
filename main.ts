@@ -587,7 +587,6 @@ namespace jellystem {
     //% block="set servo %pin pulse to %micros μs"
     //% micros.min=500 micros.max=2500 micros.defl=1500
     //% weight=332
-    //% advanced=true
     export function servoSetPulse(pin: ServoPin, micros: number): void {
         getServo(pin).setPulse(micros);
     }
@@ -605,9 +604,23 @@ namespace jellystem {
     //% minAngle.min=0 minAngle.max=90 minAngle.defl=0
     //% maxAngle.min=90 maxAngle.max=180 maxAngle.defl=180
     //% weight=331
-    //% advanced=true
     export function servoSetRange(pin: ServoPin, minAngle: number, maxAngle: number): void {
         getServo(pin).setRange(minAngle, maxAngle);
+    }
+
+    /**
+     * Set whether a continuous servo stops when it reaches the middle position (90°).
+     * Turn this on if you want the servo to stop on its own when it hits the center.
+     * @param pin the pin the servo is plugged into
+     * @param enabled true to stop at neutral, false to keep going
+     */
+    //% group="Servo"
+    //% blockId=jelly_servo_stop_on_neutral
+    //% block="set servo %pin stop at middle %enabled"
+    //% enabled.shadow=toggleOnOff
+    //% weight=330
+    export function servoSetStopOnNeutral(pin: ServoPin, enabled: boolean): void {
+        getServo(pin).setStopOnNeutral(enabled);
     }
 
     /**
