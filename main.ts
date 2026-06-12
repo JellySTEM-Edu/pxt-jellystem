@@ -847,6 +847,11 @@ namespace jellystem {
 
     // --- DISTANCE SENSOR: SHARP GP2Y0A41SK0F ---
 
+    // BACKEND TRACKING: Saves the last stable state and when it happened
+    let lastStableResult = false;
+    let lastChangeTime = 0;
+    const COOLDOWN_MS = 300; // The physical travel/stabilization window
+
     /**
      * Units for the distance sensor reading.
      */
@@ -904,20 +909,31 @@ namespace jellystem {
         let raw = pins.analogReadPin(pin);
         let d = readDistance(pin, unit);
 
+        // 1. Determine what the sensor sees right at this exact microsecond
+        let currentReading = false;
         if (comparison === DistanceComparison.Closer) {
             let inStandardRange = (d > 0 && d < threshold);
             let inBlindSpot = (d === 0 && raw > 300);
-            return inStandardRange || inBlindSpot;
+            currentReading = inStandardRange || inBlindSpot;
         } else {
-            // THE FIX: It is only 'Farther' if it's past the threshold,
-            // OR if it reads 0 AND raw voltage is low (meaning the room is truly empty)
             let genuinelyFar = (d > threshold);
             let nothingThere = (d === 0 && raw <= 300);
-
-            return genuinelyFar || nothingThere;
+            currentReading = genuinelyFar || nothingThere;
         }
-    }
 
+        // 2. NATURAL DEBOUNCE: Check if the sensor is trying to flip its answer
+        let currentTime = control.millis();
+        if (currentReading !== lastStableResult) {
+            // Only allow the answer to flip if enough time has passed for hardware to settle
+            if (currentTime - lastChangeTime >= COOLDOWN_MS) {
+                lastStableResult = currentReading;
+                lastChangeTime = currentTime;
+            }
+            // If it hasn't been 300ms yet, ignore the new reading and keep lastStableResult!
+        }
+
+        return lastStableResult;
+    }
     /**
          * Run some code every time the sensor crosses a distance you set.
          * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
