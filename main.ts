@@ -847,9 +847,6 @@ namespace jellystem {
 
     // --- DISTANCE SENSOR: SHARP GP2Y0A41SK0F ---
 
-    /**
-     * Units for the distance sensor reading.
-     */
     export enum DistanceUnit {
         //% block="cm"
         Cm = 0,
@@ -859,72 +856,47 @@ namespace jellystem {
         Raw = 2
     }
 
-    /**
-     * Reads how far away the nearest object is.
-     * Pick cm or mm as your unit.
-     * Works between 4 cm and 30 cm (or 40 mm and 300 mm).
-     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
-     * @param unit pick centimeters (cm) or millimeters (mm)
-     */
     //% group="Distance sensor"
     //% blockId=jelly_sharp_ir_distance
     //% block="distance at %pin in %unit"
     //% weight=323
     export function readDistance(pin: AnalogPin, unit: DistanceUnit): number {
         let raw = pins.analogReadPin(pin);
-        if (unit === DistanceUnit.Raw) {
-            return raw;
-        }
-        if (raw > 900) return unit === DistanceUnit.Mm ? 40 : 4;
-        if (raw < 80) return unit === DistanceUnit.Mm ? 300 : 30;
+        if (unit === DistanceUnit.Raw) return raw;
+        if (raw > 900 || raw < 80) return 0;
         let cm = Math.round(1200 / (raw - 20));
-        if (cm < 4) cm = 4;
-        if (cm > 30) cm = 30;
+        if (cm < 4 || cm > 30) return 0;
         return unit === DistanceUnit.Mm ? cm * 10 : cm;
     }
 
     export enum DistanceComparison {
-        //% block="closer"
+        //% block="closer than"
         Closer = 0,
-        //% block="farther"
+        //% block="farther than"
         Farther = 1
     }
 
-    /**
-     * Is something closer or farther than a distance you choose?
-     * Returns true or false.
-     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
-     * @param comparison choose closer or farther
-     * @param thresholdCm the distance to compare against, in centimeters, eg: 10
-     */
     //% group="Distance sensor"
     //% blockId=jelly_sharp_ir_check_distance
-    //% block="%pin|is %comparison than %thresholdCm cm?"
-    //% thresholdCm.min=4 thresholdCm.max=30
+    //% block="%pin is %comparison %threshold %unit"
     //% weight=321
-    export function checkDistance(pin: AnalogPin, comparison: DistanceComparison, thresholdCm: number): boolean {
-        let dist = readDistance(pin, DistanceUnit.Cm);
-        return comparison === DistanceComparison.Closer ? dist < thresholdCm : dist > thresholdCm;
+    export function checkDistance(pin: AnalogPin, comparison: DistanceComparison, threshold: number, unit: DistanceUnit): boolean {
+        let d = readDistance(pin, unit);
+        if (comparison === DistanceComparison.Closer) return d > 0 && d < threshold;
+        return d > threshold;
     }
 
-    /**
-     * Run some code every time an object gets closer or farther than a distance you set.
-     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
-     * @param thresholdCm the distance to watch for, in centimeters, eg: 15
-     * @param handler the code to run when something crosses that distance
-     */
     //% group="Distance sensor"
     //% blockId=jelly_sharp_ir_on_cross
-    //% block="on %pin crosses %thresholdCm cm"
-    //% thresholdCm.min=4 thresholdCm.max=30
+    //% block="on %pin is %comparison %threshold %unit"
     //% weight=318
-    export function onDistanceCrossed(pin: AnalogPin, thresholdCm: number, handler: () => void): void {
-        let wasClose = readDistance(pin, DistanceUnit.Cm) < thresholdCm;
+    export function onDistanceCrossed(pin: AnalogPin, comparison: DistanceComparison, threshold: number, unit: DistanceUnit, handler: () => void): void {
+        let wasMet = checkDistance(pin, comparison, threshold, unit);
         control.inBackground(() => {
             while (true) {
-                let isClose = readDistance(pin, DistanceUnit.Cm) < thresholdCm;
-                if (isClose !== wasClose) {
-                    wasClose = isClose;
+                let isMet = checkDistance(pin, comparison, threshold, unit);
+                if (isMet !== wasMet) {
+                    wasMet = isMet;
                     handler();
                 }
                 basic.pause(100);
