@@ -907,7 +907,7 @@ namespace jellystem {
      */
     //% group="Distance sensor"
     //% blockId=jelly_sharp_ir_check_distance
-    //% block="%pin|%comparison than %threshold|%unit"
+    //% block="%pin|%comparison|than %threshold|%unit"
     //% weight=321
     export function checkDistance(pin: AnalogPin, comparison: DistanceComparison, threshold: number, unit: DistanceUnit): boolean {
         let d = readDistance(pin, unit);
@@ -925,7 +925,7 @@ namespace jellystem {
      */
     //% group="Distance sensor"
     //% blockId=jelly_sharp_ir_on_cross
-    //% block="on %pin|%comparison than %threshold|%unit"
+    //% block="on %pin|%comparison|than %threshold|%unit"
     //% weight=318
     export function onDistanceCrossed(pin: AnalogPin, comparison: DistanceComparison, threshold: number, unit: DistanceUnit, handler: () => void): void {
         let wasMet = checkDistance(pin, comparison, threshold, unit);
