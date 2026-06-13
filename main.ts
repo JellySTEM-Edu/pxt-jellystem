@@ -513,6 +513,116 @@ namespace jellystem {
         extendServoControl(index, ServoType.Servo180, speed)
     }
 
+    // --- SERVO (via dependency: microsoft/pxt-common-packages/libs/servo) ---
+
+    /**
+     * Pins that support servo output.
+     */
+    export enum ServoPin {
+        //% block="P0"
+        P0 = 0,
+        //% block="P1"
+        P1 = 1,
+        //% block="P2"
+        P2 = 2
+    }
+
+    function getServo(pin: ServoPin): servos.Servo {
+        if (pin === ServoPin.P1) return servos.P1;
+        if (pin === ServoPin.P2) return servos.P2;
+        return servos.P0;
+    }
+
+    /**
+     * Turn a servo to an angle you choose.
+     * 0° is all the way left, 90° is the middle, 180° is all the way right.
+     * @param pin the pin the servo is plugged into
+     * @param degrees the angle to turn to, eg: 90
+     */
+    //% group="Servo"
+    //% blockId=jelly_servo_set_angle
+    //% block="set servo %pin to %degrees °"
+    //% degrees.min=0 degrees.max=180 degrees.defl=90
+    //% weight=335
+    export function servoSetAngle(pin: ServoPin, degrees: number): void {
+        getServo(pin).setAngle(degrees);
+    }
+
+    /**
+     * Run a continuous (360°) servo at a speed you choose.
+     * Positive = forward, negative = backward, 0 = stop.
+     * @param pin the pin the servo is plugged into
+     * @param speed the speed from -100% to 100%, eg: 50
+     */
+    //% group="Servo"
+    //% blockId=jelly_servo_run
+    //% block="continuous servo %pin run at %speed \\%"
+    //% speed.min=-100 speed.max=100 speed.defl=50
+    //% weight=334
+    export function servoRun(pin: ServoPin, speed: number): void {
+        getServo(pin).run(speed);
+    }
+
+    /**
+     * Stop a servo. It will stay where it is and won't hold its position.
+     * @param pin the pin the servo is plugged into
+     */
+    //% group="Servo"
+    //% blockId=jelly_servo_stop
+    //% block="stop servo %pin"
+    //% weight=333
+    export function servoStop(pin: ServoPin): void {
+        getServo(pin).stop();
+    }
+
+    /**
+     * Set the servo pulse width directly in microseconds.
+     * Useful for fine-tuning or non-standard servos.
+     * 1000 μs = far left, 1500 μs = center, 2000 μs = far right.
+     * @param pin the pin the servo is plugged into
+     * @param micros the pulse width in microseconds, eg: 1500
+     */
+    //% group="Servo"
+    //% blockId=jelly_servo_set_pulse
+    //% block="set servo %pin pulse to %micros μs"
+    //% micros.min=500 micros.max=2500 micros.defl=1500
+    //% weight=332
+    export function servoSetPulse(pin: ServoPin, micros: number): void {
+        getServo(pin).setPulse(micros);
+    }
+
+    /**
+     * Set the min and max angle limits for a servo.
+     * Useful if your servo doesn't go all the way to 0° or 180°.
+     * @param pin the pin the servo is plugged into
+     * @param minAngle the minimum angle, eg: 0
+     * @param maxAngle the maximum angle, eg: 180
+     */
+    //% group="Servo"
+    //% blockId=jelly_servo_set_range
+    //% block="set servo %pin range %minAngle to %maxAngle °"
+    //% minAngle.min=0 minAngle.max=90 minAngle.defl=0
+    //% maxAngle.min=90 maxAngle.max=180 maxAngle.defl=180
+    //% weight=331
+    export function servoSetRange(pin: ServoPin, minAngle: number, maxAngle: number): void {
+        getServo(pin).setRange(minAngle, maxAngle);
+    }
+
+    /**
+     * Set whether a continuous servo stops when it reaches the middle position (90°).
+     * Turn this on if you want the servo to stop on its own when it hits the center.
+     * @param pin the pin the servo is plugged into
+     * @param enabled true to stop at neutral, false to keep going
+     */
+    //% group="Servo"
+    //% blockId=jelly_servo_stop_on_neutral
+    //% block="set servo %pin stop at middle %enabled"
+    //% enabled.shadow=toggleOnOff
+    //% weight=330
+    export function servoSetStopOnNeutral(pin: ServoPin, enabled: boolean): void {
+        getServo(pin).setStopOnNeutral(enabled);
+    }
+
     /**
      * Sets the battery type and returns the battery level.
      * @param batType - Type of battery. 
@@ -847,6 +957,11 @@ namespace jellystem {
 
     // --- DISTANCE SENSOR: SHARP GP2Y0A41SK0F ---
 
+    // BACKEND TRACKING: Saves the last stable state and when it happened
+    let lastStableResult = false;
+    let lastChangeTime = 0;
+    const COOLDOWN_MS = 300; // The physical travel/stabilization window
+
     /**
      * Units for the distance sensor reading.
      */
@@ -861,10 +976,10 @@ namespace jellystem {
 
     /**
      * Reads how far away the nearest object is.
-     * Pick cm or mm as your unit.
-     * Works between 4 cm and 30 cm (or 40 mm and 300 mm).
+     * Pick cm, mm, or raw as your unit.
+     * Returns 0 if nothing is in range.
      * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
-     * @param unit pick centimeters (cm) or millimeters (mm)
+     * @param unit pick cm, mm, or raw
      */
     //% group="Distance sensor"
     //% blockId=jelly_sharp_ir_distance
@@ -872,17 +987,23 @@ namespace jellystem {
     //% weight=323
     export function readDistance(pin: AnalogPin, unit: DistanceUnit): number {
         let raw = pins.analogReadPin(pin);
-        if (unit === DistanceUnit.Raw) {
-            return raw;
-        }
-        if (raw > 900) return unit === DistanceUnit.Mm ? 40 : 4;
-        if (raw < 80) return unit === DistanceUnit.Mm ? 300 : 30;
+        if (unit === DistanceUnit.Raw) return raw;
+
+        // Safety: Prevent division by zero or negative numbers if raw is too low
+        if (raw <= 20) return 0;
+
+        // Linearize raw voltage into centimeters
         let cm = Math.round(1200 / (raw - 20));
-        if (cm < 4) cm = 4;
-        if (cm > 30) cm = 30;
+
+        // RECALIBRATED: Expanded window limits to accept wider real-world values (4cm - 40cm)
+        if (cm < 4 || cm > 40) return 0;
+
         return unit === DistanceUnit.Mm ? cm * 10 : cm;
     }
 
+    /**
+     * Direction to compare distance.
+     */
     export enum DistanceComparison {
         //% block="closer"
         Closer = 0,
@@ -890,43 +1011,67 @@ namespace jellystem {
         Farther = 1
     }
 
-    /**
-     * Is something closer or farther than a distance you choose?
-     * Returns true or false.
-     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
-     * @param comparison choose closer or farther
-     * @param thresholdCm the distance to compare against, in centimeters, eg: 10
-     */
     //% group="Distance sensor"
     //% blockId=jelly_sharp_ir_check_distance
-    //% block="%pin|is %comparison than %thresholdCm cm?"
-    //% thresholdCm.min=4 thresholdCm.max=30
+    //% block="%pin|%comparison|than %threshold|%unit"
     //% weight=321
-    export function checkDistance(pin: AnalogPin, comparison: DistanceComparison, thresholdCm: number): boolean {
-        let dist = readDistance(pin, DistanceUnit.Cm);
-        return comparison === DistanceComparison.Closer ? dist < thresholdCm : dist > thresholdCm;
-    }
+    export function checkDistance(pin: AnalogPin, comparison: DistanceComparison, threshold: number, unit: DistanceUnit): boolean {
+        let raw = pins.analogReadPin(pin);
+        let d = readDistance(pin, unit);
 
+        // 1. Determine what the sensor sees right at this exact microsecond
+        let currentReading = false;
+        if (comparison === DistanceComparison.Closer) {
+            let inStandardRange = (d > 0 && d < threshold);
+            let inBlindSpot = (d === 0 && raw > 300);
+            currentReading = inStandardRange || inBlindSpot;
+        } else {
+            let genuinelyFar = (d > threshold);
+            let nothingThere = (d === 0 && raw <= 300);
+            currentReading = genuinelyFar || nothingThere;
+        }
+
+        // 2. NATURAL DEBOUNCE: Check if the sensor is trying to flip its answer
+        let currentTime = control.millis();
+        if (currentReading !== lastStableResult) {
+            // Only allow the answer to flip if enough time has passed for hardware to settle
+            if (currentTime - lastChangeTime >= COOLDOWN_MS) {
+                lastStableResult = currentReading;
+                lastChangeTime = currentTime;
+            }
+            // If it hasn't been 300ms yet, ignore the new reading and keep lastStableResult!
+        }
+
+        return lastStableResult;
+    }
     /**
-     * Run some code every time an object gets closer or farther than a distance you set.
-     * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
-     * @param thresholdCm the distance to watch for, in centimeters, eg: 15
-     * @param handler the code to run when something crosses that distance
-     */
+         * Run some code every time the sensor crosses a distance you set.
+         * @param pin the pin the distance sensor is plugged into, eg: AnalogPin.P0
+         * @param comparison closer or farther
+         * @param threshold the distance to watch for, eg: 15
+         * @param unit the unit for the threshold value
+         * @param handler the code to run when the threshold is crossed
+         */
     //% group="Distance sensor"
     //% blockId=jelly_sharp_ir_on_cross
-    //% block="on %pin crosses %thresholdCm cm"
-    //% thresholdCm.min=4 thresholdCm.max=30
+    //% block="on %pin|%comparison|than %threshold|%unit"
     //% weight=318
-    export function onDistanceCrossed(pin: AnalogPin, thresholdCm: number, handler: () => void): void {
-        let wasClose = readDistance(pin, DistanceUnit.Cm) < thresholdCm;
+    export function onDistanceCrossed(pin: AnalogPin, comparison: DistanceComparison, threshold: number, unit: DistanceUnit, handler: () => void): void {
+        // Capture the initial state using our upgraded checkDistance (which includes the blind spot safety net)
+        let wasMet = checkDistance(pin, comparison, threshold, unit);
+
         control.inBackground(() => {
             while (true) {
-                let isClose = readDistance(pin, DistanceUnit.Cm) < thresholdCm;
-                if (isClose !== wasClose) {
-                    wasClose = isClose;
-                    handler();
+                // Continuously poll the upgraded logic
+                let isMet = checkDistance(pin, comparison, threshold, unit);
+
+                // If the state changes (e.g., hand enters the <10cm zone OR the blind spot)
+                if (isMet !== wasMet) {
+                    wasMet = isMet;
+                    handler(); // Fire the student's code!
                 }
+
+                // 100ms pause prevents the background loop from lagging the rest of the Micro:bit
                 basic.pause(100);
             }
         });
@@ -937,3 +1082,6 @@ namespace jellystem {
 // Forces the background tracking dependency category tab out of sight.
 //% deprecated=true
 namespace neopixel { }
+
+//% deprecated=true
+namespace servos { }
