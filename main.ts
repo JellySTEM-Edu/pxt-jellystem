@@ -1070,8 +1070,8 @@ namespace jellystem {
 
     /**
      * Set up the ultrasonic distance sensor hardware pins. Run this once in "on start".
-     * @param trig pin connected to trig, eg: DigitalPin.P13
-     * @param echo pin connected to echo, eg: DigitalPin.P14
+     * @param trig pin connected to trig, eg: DigitalPin.P0
+     * @param echo pin connected to echo, eg: DigitalPin.P0
      */
     //% group="Distance Sensors"
     //% blockId=jelly_distance_ultrasonic_setup
