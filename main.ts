@@ -955,6 +955,180 @@ namespace jellystem {
         return neopixel.hsl(h, s, l);
     }
 
+    // --- ULTRASONIC SENSOR (HC-SR04 / compatible) ---
+    // Adapted from MakerBit ultrasonic extension by 1010Technologies
+    // github.com/1010Technologies/pxt-makerbit-ultrasonic — MIT License
+
+    const ULTRASONIC_MAX_TRAVEL_TIME = 17400   // 300 cm * 58 μs/cm round-trip
+    const ULTRASONIC_MEASUREMENTS = 3
+    const ULTRASONIC_PULSE_INTERVAL_MS = 145
+
+    /**
+     * Units for the ultrasonic distance sensor.
+     */
+    export enum UltrasonicUnit {
+        //% block="cm"
+        CM = 58,
+        //% block="inch"
+        INCH = 148
+    }
+
+    interface UltrasonicRoundTrip {
+        ts: number
+        rtt: number
+    }
+
+    interface UltrasonicDevice {
+        trig: DigitalPin | undefined
+        roundTrips: UltrasonicRoundTrip[]
+        medianRoundTrip: number
+        travelTimeObservers: number[]
+    }
+
+    let ultrasonicState: UltrasonicDevice
+
+    function ultrasonicMedian(values: number[]): number {
+        values.sort((a, b) => a - b)
+        return values[(values.length - 1) >> 1]
+    }
+
+    function ultrasonicGetMedianRRT(roundTrips: UltrasonicRoundTrip[]): number {
+        return ultrasonicMedian(roundTrips.map(urt => urt.rtt))
+    }
+
+    function ultrasonicTriggerPulse(): void {
+        let trig = ultrasonicState.trig;
+        if (trig === undefined) return;
+
+        pins.setPull(trig, PinPullMode.PullNone);
+        pins.digitalWritePin(trig, 0);
+        control.waitMicros(2);
+        pins.digitalWritePin(trig, 1);
+        control.waitMicros(10);
+        pins.digitalWritePin(trig, 0);
+    }
+
+    function ultrasonicMeasureInBackground(): void {
+        const trips = ultrasonicState.roundTrips
+        while (true) {
+            const now = input.runningTime()
+            if (trips[trips.length - 1].ts < now - ULTRASONIC_PULSE_INTERVAL_MS - 10) {
+                ultrasonicState.roundTrips.push({ ts: now, rtt: ULTRASONIC_MAX_TRAVEL_TIME })
+            }
+            while (trips.length > ULTRASONIC_MEASUREMENTS) {
+                trips.shift()
+            }
+            ultrasonicState.medianRoundTrip = ultrasonicGetMedianRRT(ultrasonicState.roundTrips)
+
+            for (let i = 0; i < ultrasonicState.travelTimeObservers.length; i++) {
+                const threshold = ultrasonicState.travelTimeObservers[i]
+                if (threshold > 0 && ultrasonicState.medianRoundTrip <= threshold) {
+                    control.raiseEvent(700, threshold)
+                    ultrasonicState.travelTimeObservers[i] = -threshold
+                } else if (threshold < 0 && ultrasonicState.medianRoundTrip > -threshold) {
+                    ultrasonicState.travelTimeObservers[i] = -threshold
+                }
+            }
+            ultrasonicTriggerPulse()
+            basic.pause(ULTRASONIC_PULSE_INTERVAL_MS)
+        }
+    }
+
+    /**
+     * Configures the ultrasonic distance sensor and measures continuously in the background.
+     * @param trig pin connected to trig, eg: DigitalPin.P13
+     * @param echo pin connected to echo, eg: DigitalPin.P14
+     */
+    //% group="Ultrasonic sensor"
+    //% blockId=jelly_ultrasonic_connect
+    //% block="connect ultrasonic distance sensor | with Trig at %trig | and Echo at %echo"
+    //% trig.fieldEditor="gridpicker" trig.fieldOptions.columns=4
+    //% echo.fieldEditor="gridpicker" echo.fieldOptions.columns=4
+    //% weight=315
+    export function connectUltrasonicDistanceSensor(trig: DigitalPin, echo: DigitalPin): void {
+        if (ultrasonicState && ultrasonicState.trig) {
+            return
+        }
+        if (!ultrasonicState) {
+            ultrasonicState = {
+                trig: trig,
+                roundTrips: [{ ts: 0, rtt: ULTRASONIC_MAX_TRAVEL_TIME }],
+                medianRoundTrip: ULTRASONIC_MAX_TRAVEL_TIME,
+                travelTimeObservers: []
+            }
+        } else {
+            ultrasonicState.trig = trig
+        }
+        pins.onPulsed(echo, PulseValue.High, () => {
+            if (
+                pins.pulseDuration() < ULTRASONIC_MAX_TRAVEL_TIME &&
+                ultrasonicState.roundTrips.length <= ULTRASONIC_MEASUREMENTS
+            ) {
+                ultrasonicState.roundTrips.push({
+                    ts: input.runningTime(),
+                    rtt: pins.pulseDuration()
+                })
+            }
+        })
+        control.inBackground(ultrasonicMeasureInBackground)
+    }
+
+    /**
+     * Returns the distance to an object in a range from 1 to 300 centimeters or up to 118 inch.
+     * The maximum value is returned to indicate when no object was detected.
+     * -1 is returned when the device is not connected.
+     * @param unit unit of distance, eg: UltrasonicUnit.CM
+     */
+    //% group="Ultrasonic sensor"
+    //% blockId=jelly_ultrasonic_distance
+    //% block="ultrasonic distance in %unit"
+    //% weight=314
+    export function getUltrasonicDistance(unit: UltrasonicUnit): number {
+        if (!ultrasonicState) return -1;
+        basic.pause(0);
+        return Math.floor(ultrasonicState.medianRoundTrip / unit);
+    }
+
+    /**
+     * Returns `true` if an object is within the specified distance. `false` otherwise.
+     * @param distance distance to object, eg: 20
+     * @param unit unit of distance, eg: UltrasonicUnit.CM
+     */
+    //% group="Ultrasonic sensor"
+    //% blockId=jelly_ultrasonic_less_than
+    //% block="ultrasonic distance is less than | %distance | %unit"
+    //% weight=313
+    export function isUltrasonicDistanceLessThan(distance: number, unit: UltrasonicUnit): boolean {
+        if (!ultrasonicState) return false;
+        basic.pause(0);
+        return Math.floor(ultrasonicState.medianRoundTrip / unit) < distance;
+    }
+
+    /**
+     * Do something when an object is detected the first time within a specified range.
+     * @param distance distance to object, eg: 20
+     * @param unit unit of distance, eg: UltrasonicUnit.CM
+     * @param handler body code to run when the event is raised
+     */
+    //% group="Ultrasonic sensor"
+    //% blockId=jelly_ultrasonic_on_detected
+    //% block="on object detected once within | %distance | %unit"
+    //% weight=312
+    export function onUltrasonicObjectDetected(distance: number, unit: UltrasonicUnit, handler: () => void): void {
+        if (distance <= 0) return
+        if (!ultrasonicState) {
+            ultrasonicState = {
+                trig: undefined,
+                roundTrips: [{ ts: 0, rtt: ULTRASONIC_MAX_TRAVEL_TIME }],
+                medianRoundTrip: ULTRASONIC_MAX_TRAVEL_TIME,
+                travelTimeObservers: []
+            }
+        }
+        const travelTimeThreshold = Math.imul(distance, unit)
+        ultrasonicState.travelTimeObservers.push(travelTimeThreshold)
+        control.onEvent(700, travelTimeThreshold, () => { handler() })
+    }
+
     // --- DISTANCE SENSOR: SHARP GP2Y0A41SK0F ---
 
     // BACKEND TRACKING: Saves the last stable state and when it happened
