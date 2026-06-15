@@ -988,7 +988,8 @@ namespace jellystem {
         Farther = 1
     }
 
-    // --- Ultrasonic Backend ---
+    // --- Ultrasonic Backend Drivers ---
+    const JELLY_ULTRASONIC_EVENT_ID = 700
     const ULTRASONIC_MAX_TRAVEL_TIME = 17400
     const ULTRASONIC_MEASUREMENTS = 3
     const ULTRASONIC_PULSE_INTERVAL_MS = 145
@@ -1022,7 +1023,7 @@ namespace jellystem {
         for (let i = 0; i < ultrasonicState.travelTimeObservers.length; i++) {
             const threshold = ultrasonicState.travelTimeObservers[i]
             if (threshold > 0 && ultrasonicState.medianRoundTrip <= threshold) {
-                control.raiseEvent(700, threshold)
+                control.raiseEvent(JELLY_ULTRASONIC_EVENT_ID, threshold)
                 ultrasonicState.travelTimeObservers[i] = -threshold
             } else if (threshold < 0 && ultrasonicState.medianRoundTrip > -threshold) {
                 ultrasonicState.travelTimeObservers[i] = -threshold
@@ -1045,19 +1046,7 @@ namespace jellystem {
         }
     }
 
-    // --- IR Backend ---
-    // Per-sensor debounce arrays indexed by sensor slot (0=P0, 1=P1, 2=P2).
-    // Using separate arrays per sensor prevents P0 and P1 from corrupting each other's state.
-    let irLastStable = [false, false, false];
-    let irLastChangeTime = [0, 0, 0];
-    const IR_COOLDOWN_MS = 300;
-
-    function irSensorIndex(sensor: JellySensorType): number {
-        if (sensor === JellySensorType.IR_P1) return 1;
-        if (sensor === JellySensorType.IR_P2) return 2;
-        return 0;
-    }
-
+    // --- IR Backend Drivers ---
     function irSensorPin(sensor: JellySensorType): AnalogPin {
         if (sensor === JellySensorType.IR_P1) return AnalogPin.P1;
         if (sensor === JellySensorType.IR_P2) return AnalogPin.P2;
@@ -1127,10 +1116,14 @@ namespace jellystem {
             if (!ultrasonicState) return -1;
             basic.pause(0);
             if (unit === JellyDistanceUnit.RAW) return ultrasonicState.medianRoundTrip;
+
+            // Fixes precision loss bug for millimeter readings
+            if (unit === JellyDistanceUnit.MM) {
+                return Math.floor((ultrasonicState.medianRoundTrip * 10) / 58);
+            }
+
             let divisor = (unit === JellyDistanceUnit.INCH) ? 148 : 58;
-            let val = Math.floor(ultrasonicState.medianRoundTrip / divisor);
-            if (unit === JellyDistanceUnit.MM) return val * 10;
-            return val;
+            return Math.floor(ultrasonicState.medianRoundTrip / divisor);
         } else {
             return internalReadSharpIR(irSensorPin(sensor), unit);
         }
@@ -1138,7 +1131,7 @@ namespace jellystem {
 
     /**
      * Is an object closer or farther than a set distance?
-     * Includes blind-spot safety and debounce for IR sensors.
+     * Includes blind-spot safety for IR sensors. Completely stateless to prevent multi-block conflicts.
      * @param sensor choose ultrasonic or which IR pin
      * @param comparison closer or farther
      * @param threshold the distance to compare against, eg: 20
@@ -1150,38 +1143,26 @@ namespace jellystem {
     //% weight=323
     export function checkDistance(sensor: JellySensorType, comparison: DistanceComparison, threshold: number, unit: JellyDistanceUnit): boolean {
         if (sensor === JellySensorType.Ultrasonic) {
-            // Ultrasonic already smoothed by median — no debounce needed
             let d = readDistance(sensor, unit);
             if (d === -1) return false;
             return comparison === DistanceComparison.Closer ? d < threshold : d > threshold;
         } else {
             let pin = irSensorPin(sensor);
-            let idx = irSensorIndex(sensor);
             let raw = pins.analogReadPin(pin);
             let d = internalReadSharpIR(pin, unit);
 
-            // Blind-spot handling: raw > 300 means something is very close but outside
-            // the linearizable range of the IR sensor formula
-            let currentReading: boolean;
+            // Blind-spot handling evaluation
             if (comparison === DistanceComparison.Closer) {
-                currentReading = (d > 0 && d < threshold) || (d === 0 && raw > 300);
+                return (d > 0 && d < threshold) || (d === 0 && raw > 300);
             } else {
-                currentReading = (d > threshold) || (d === 0 && raw <= 300);
+                return (d > threshold) || (d === 0 && raw <= 300);
             }
-
-            // Per-sensor debounce: only flip state after COOLDOWN_MS of stable disagreement
-            let now = control.millis();
-            if (currentReading !== irLastStable[idx] && now - irLastChangeTime[idx] >= IR_COOLDOWN_MS) {
-                irLastStable[idx] = currentReading;
-                irLastChangeTime[idx] = now;
-            }
-            return irLastStable[idx];
         }
     }
 
     /**
      * Run code every time an object crosses a distance threshold.
-     * Works with both ultrasonic and IR sensors.
+     * Works with isolated per-block local closures to completely prevent state collisions.
      * @param sensor choose ultrasonic or which IR pin
      * @param comparison closer or farther
      * @param threshold the distance to watch for, eg: 20
@@ -1193,15 +1174,32 @@ namespace jellystem {
     //% block="on %sensor %comparison than %threshold %unit"
     //% weight=320
     export function onDistanceCrossed(sensor: JellySensorType, comparison: DistanceComparison, threshold: number, unit: JellyDistanceUnit, handler: () => void): void {
-        let wasMet = checkDistance(sensor, comparison, threshold, unit);
         control.inBackground(() => {
+            let stableState = checkDistance(sensor, comparison, threshold, unit);
+            let candidateState = stableState;
+            let durationStable = 0;
+            const CHECK_INTERVAL = 50;       // Sample every 50ms
+            const DEBOUNCE_REQUIRED = 200;    // Target state must stay solid for 200ms
+
             while (true) {
-                let isMet = checkDistance(sensor, comparison, threshold, unit);
-                if (isMet !== wasMet) {
-                    wasMet = isMet;
-                    handler();
+                basic.pause(CHECK_INTERVAL);
+                let currentState = checkDistance(sensor, comparison, threshold, unit);
+
+                if (currentState !== stableState) {
+                    if (currentState === candidateState) {
+                        durationStable += CHECK_INTERVAL;
+                        if (durationStable >= DEBOUNCE_REQUIRED) {
+                            stableState = currentState;
+                            handler();
+                        }
+                    } else {
+                        candidateState = currentState;
+                        durationStable = CHECK_INTERVAL;
+                    }
+                } else {
+                    candidateState = stableState;
+                    durationStable = 0;
                 }
-                basic.pause(100);
             }
         });
     }
@@ -1230,7 +1228,7 @@ namespace jellystem {
         let divisor = (unit === JellyDistanceUnit.INCH) ? 148 : (unit === JellyDistanceUnit.MM) ? 6 : 58;
         const travelTimeThreshold = Math.imul(distance, divisor);
         ultrasonicState.travelTimeObservers.push(travelTimeThreshold);
-        control.onEvent(700, travelTimeThreshold, () => { handler(); });
+        control.onEvent(JELLY_ULTRASONIC_EVENT_ID, travelTimeThreshold, () => { handler(); });
     }
 }
 
