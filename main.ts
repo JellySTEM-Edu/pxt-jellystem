@@ -1056,8 +1056,14 @@ namespace jellystem {
     function internalReadSharpIR(pin: AnalogPin, unit: JellyDistanceUnit): number {
         let raw = pins.analogReadPin(pin);
         if (unit === JellyDistanceUnit.RAW) return raw;
-        if (raw <= 20) return 0;
-        let cm = Math.round(1200 / (raw - 20));
+
+        // 1. Filter out bottom-end noise
+        if (raw <= 10) return 0;
+
+        // 2. SWAP IN THIS CALIBRATED FORMULA:
+        let cm = Math.round(3300 / (raw + 15));
+
+        // 3. Keep the kit's safety boundaries intact
         if (cm < 4 || cm > 40) return 0;
         if (unit === JellyDistanceUnit.MM) return cm * 10;
         if (unit === JellyDistanceUnit.INCH) return Math.round(cm / 2.54);
