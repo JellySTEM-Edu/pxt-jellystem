@@ -994,6 +994,7 @@ namespace jellystem {
      * @param pin the pin the sensor is plugged into, eg: AnalogPin.P0
      * @param unit cm, mm, inch, or raw
      */
+    //% subcategory="Distance Sensors"
     //% group="IR Distance"
     //% blockId=jelly_ir_distance_read
     //% block="IR distance at %pin in %unit"
@@ -1010,6 +1011,7 @@ namespace jellystem {
      * @param threshold the distance to compare against, eg: 15
      * @param unit cm, mm, or inch
      */
+    //% subcategory="Distance Sensors"
     //% group="IR Distance"
     //% blockId=jelly_ir_distance_check
     //% block="IR distance %comparison than %threshold %unit at %pin"
@@ -1032,6 +1034,7 @@ namespace jellystem {
      * @param unit cm, mm, or inch
      * @param handler code to run when the threshold is crossed
      */
+    //% subcategory="Distance Sensors"
     //% group="IR Distance"
     //% blockId=jelly_ir_on_cross
     //% block="on IR %comparison than %threshold %unit at %pin"
@@ -1169,6 +1172,7 @@ namespace jellystem {
      * @param trig pin connected to Trig, eg: DigitalPin.P13
      * @param echo pin connected to Echo, eg: DigitalPin.P14
      */
+    //% subcategory="Distance Sensors"
     //% group="Ultrasonic"
     //% blockId=jelly_ultrasonic_setup
     //% block="set up %model ultrasonic sensor: Trig %trig Echo %echo"
@@ -1203,6 +1207,7 @@ namespace jellystem {
      * Returns -1 if the sensor has not been set up yet.
      * @param unit cm, mm, inch, or raw
      */
+    //% subcategory="Distance Sensors"
     //% group="Ultrasonic"
     //% blockId=jelly_ultrasonic_distance_read
     //% block="ultrasonic distance in %unit"
@@ -1220,6 +1225,7 @@ namespace jellystem {
      * @param threshold the distance to compare against, eg: 20
      * @param unit cm, mm, or inch
      */
+    //% subcategory="Distance Sensors"
     //% group="Ultrasonic"
     //% blockId=jelly_ultrasonic_check
     //% block="ultrasonic %comparison than %threshold %unit"
@@ -1237,6 +1243,7 @@ namespace jellystem {
      * @param unit cm, mm, or inch
      * @param handler code to run when the threshold is crossed
      */
+    //% subcategory="Distance Sensors"
     //% group="Ultrasonic"
     //% blockId=jelly_ultrasonic_on_cross
     //% block="on ultrasonic %comparison than %threshold %unit"
@@ -1277,6 +1284,7 @@ namespace jellystem {
      * @param unit cm, mm, or inch
      * @param handler code to run when something is detected
      */
+    //% subcategory="Distance Sensors"
     //% group="Ultrasonic"
     //% blockId=jelly_ultrasonic_on_detected
     //% block="on ultrasonic object detected within %distance %unit"
