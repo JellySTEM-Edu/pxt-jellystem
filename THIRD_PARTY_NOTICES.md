@@ -27,6 +27,10 @@ The original MIT license requires that the copyright notice and permission notic
 ---
 
 Additional third-party code:
+
+
+---
+
 Project name:
 Microsoft pxt-neopixel
 
@@ -48,7 +52,7 @@ Project name:
 Microsoft pxt-common-packages (servo)
 
 Repository:
-github.com/microsoft/pxt-common-packages/libs/servo
+[github.com/microsoft/pxt-common-packages/libs/servo](https://github.com/microsoft/pxt-common-packages/tree/master/libs/servo)
 
 License:
 MIT License
@@ -60,3 +64,22 @@ Changes by JellySTEM:
 - Linked as a versioned dependency
 - e-exposed its blocks inside the unified JellySTEM drawer via thin wrapper functions under the "Servo" group. 
 - The upstream servo drawer is suppressed using //% deprecated=true.
+
+---
+
+Project name:
+1010Technologies pxt-makerbit-ultrasonic
+
+Repository:
+[https://github.com/1010technologies/pxt-makerbit-ultrasonic](https://github.com/1010technologies/pxt-makerbit-ultrasonic)
+
+License:
+MIT License
+
+Original copyright:
+Copyright (c) 2019 Roger Wagner
+
+Changes by JellySTEM:
+- Eenamed enums to avoid collision with existing DistanceUnit
+- Prefixed private helpers
+- Added "jelly_" namespace prefix to blockId
