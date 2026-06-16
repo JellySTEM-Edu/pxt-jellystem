@@ -744,7 +744,6 @@ namespace jellystem {
     //% strip.defl=strip
     //% strip.shadow=variables_get
     //% weight=80 blockGap=8
-    //% advanced=true
     export function setPixelColor(strip: neopixel.Strip, pixeloffset: number, rgb: number): void {
         strip.setPixelColor(pixeloffset, rgb);
     }
@@ -786,7 +785,6 @@ namespace jellystem {
     //% strip.defl=strip
     //% strip.shadow=variables_get
     //% weight=59 blockGap=8
-    //% advanced=true
     export function setBrightness(strip: neopixel.Strip, brightness: number): void {
         strip.setBrightness(brightness);
     }
@@ -845,12 +843,12 @@ namespace jellystem {
      * @param white brightness of the white LED, eg: 255
      */
     //% group="NeoPixel"
+    //% subcategory="More"
     //% blockId=jelly_neopixel_set_pixel_white
     //% block="%strip|set pixel white LED at %pixeloffset|to %white"
     //% strip.defl=strip
     //% strip.shadow=variables_get
     //% weight=80 blockGap=8
-    //% advanced=true
     export function setPixelWhiteLED(strip: neopixel.Strip, pixeloffset: number, white: number): void {
         strip.setPixelWhiteLED(pixeloffset, white);
     }
@@ -859,12 +857,12 @@ namespace jellystem {
      * Gets the number of pixels declared on the strip.
      */
     //% group="NeoPixel"
+    //% subcategory="More"
     //% blockId=jelly_neopixel_length
     //% block="%strip|length"
     //% strip.defl=strip
     //% strip.shadow=variables_get
     //% weight=60 blockGap=8
-    //% advanced=true
     export function length(strip: neopixel.Strip): number {
         return strip.length();
     }
@@ -873,12 +871,12 @@ namespace jellystem {
      * Apply brightness to current colors using a quadratic easing.
      */
     //% group="NeoPixel"
+    //% subcategory="More"
     //% blockId=jelly_neopixel_ease_brightness
     //% block="%strip|ease brightness"
     //% strip.defl=strip
     //% strip.shadow=variables_get
     //% weight=58 blockGap=8
-    //% advanced=true
     export function easeBrightness(strip: neopixel.Strip): void {
         strip.easeBrightness();
     }
@@ -888,12 +886,12 @@ namespace jellystem {
      * @param width number of pixels in a row
      */
     //% group="NeoPixel"
+    //% subcategory="More"
     //% blockId=jelly_neopixel_set_matrix_width
     //% block="%strip|set matrix width %width"
     //% strip.defl=strip
     //% strip.shadow=variables_get
     //% weight=5 blockGap=8
-    //% advanced=true
     export function setMatrixWidth(strip: neopixel.Strip, width: number): void {
         strip.setMatrixWidth(width);
     }
@@ -906,12 +904,12 @@ namespace jellystem {
      * @param rgb RGB color of the LED
      */
     //% group="NeoPixel"
+    //% subcategory="More"
     //% blockId=jelly_neopixel_set_matrix_color
     //% block="%strip|set matrix color at x %x|y %y|to %rgb=neopixel_colors"
     //% strip.defl=strip
     //% strip.shadow=variables_get
     //% weight=4 blockGap=8
-    //% advanced=true
     export function setMatrixColor(strip: neopixel.Strip, x: number, y: number, rgb: number): void {
         strip.setMatrixColor(x, y, rgb);
     }
@@ -922,10 +920,10 @@ namespace jellystem {
      * Gets the RGB value of a known color
      */
     //% group="NeoPixel"
+    //% subcategory="More"
     //% blockId=jelly_neopixel_colors
     //% block="%color"
     //% weight=2 blockGap=8
-    //% advanced=true
     export function colors(color: NeoPixelColors): number {
         return neopixel.colors(color);
     }
@@ -934,11 +932,11 @@ namespace jellystem {
      * Converts red, green, blue channels into an RGB color code value.
      */
     //% group="NeoPixel"
+    //% subcategory="More"
     //% blockId=jelly_neopixel_rgb
     //% block="red %red|green %green|blue %blue"
     //% red.min=0 red.max=255 green.min=0 green.max=255 blue.min=0 blue.max=255
     //% weight=1 blockGap=8
-    //% advanced=true
     export function rgb(red: number, green: number, blue: number): number {
         return neopixel.rgb(red, green, blue);
     }
