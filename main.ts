@@ -998,7 +998,7 @@ namespace jellystem {
     //% group="IR Distance"
     //% blockId=jelly_ir_distance_read
     //% block="IR distance at %pin in %unit"
-    //% weight=322
+    //% weight=395
     export function readIrDistance(pin: AnalogPin, unit: IrDistanceUnit): number {
         return internalReadSharpIR(pin, unit);
     }
@@ -1015,7 +1015,7 @@ namespace jellystem {
     //% group="IR Distance"
     //% blockId=jelly_ir_distance_check
     //% block="IR distance %comparison than %threshold %unit at %pin"
-    //% weight=321
+    //% weight=394
     export function checkIrDistance(pin: AnalogPin, comparison: IrDistanceComparison, threshold: number, unit: IrDistanceUnit): boolean {
         let raw = pins.analogReadPin(pin);
         let d = internalReadSharpIR(pin, unit);
@@ -1038,7 +1038,7 @@ namespace jellystem {
     //% group="IR Distance"
     //% blockId=jelly_ir_on_cross
     //% block="on IR %comparison than %threshold %unit at %pin"
-    //% weight=320
+    //% weight=393
     export function onIrDistanceCrossed(pin: AnalogPin, comparison: IrDistanceComparison, threshold: number, unit: IrDistanceUnit, handler: () => void): void {
         control.inBackground(() => {
             let stableState = checkIrDistance(pin, comparison, threshold, unit);
@@ -1178,7 +1178,7 @@ namespace jellystem {
     //% block="set up %model ultrasonic sensor: Trig %trig Echo %echo"
     //% trig.fieldEditor="gridpicker" trig.fieldOptions.columns=4
     //% echo.fieldEditor="gridpicker" echo.fieldOptions.columns=4
-    //% weight=318
+    //% weight=392
     export function connectUltrasonic(model: UltrasonicModel, trig: DigitalPin, echo: DigitalPin): void {
         if (ultrasonicState && ultrasonicState.trig) return;
         if (!ultrasonicState) {
@@ -1211,7 +1211,7 @@ namespace jellystem {
     //% group="Ultrasonic"
     //% blockId=jelly_ultrasonic_distance_read
     //% block="ultrasonic distance in %unit"
-    //% weight=317
+    //% weight=391
     export function readUltrasonicDistance(unit: UltrasonicUnit): number {
         if (!ultrasonicState) return -1;
         basic.pause(0);
@@ -1229,7 +1229,7 @@ namespace jellystem {
     //% group="Ultrasonic"
     //% blockId=jelly_ultrasonic_check
     //% block="ultrasonic %comparison than %threshold %unit"
-    //% weight=316
+    //% weight=390
     export function checkUltrasonicDistance(comparison: UltrasonicComparison, threshold: number, unit: UltrasonicUnit): boolean {
         let d = readUltrasonicDistance(unit);
         if (d === -1) return false;
@@ -1247,7 +1247,7 @@ namespace jellystem {
     //% group="Ultrasonic"
     //% blockId=jelly_ultrasonic_on_cross
     //% block="on ultrasonic %comparison than %threshold %unit"
-    //% weight=315
+    //% weight=389
     export function onUltrasonicDistanceCrossed(comparison: UltrasonicComparison, threshold: number, unit: UltrasonicUnit, handler: () => void): void {
         control.inBackground(() => {
             let stableState = checkUltrasonicDistance(comparison, threshold, unit);
@@ -1288,7 +1288,7 @@ namespace jellystem {
     //% group="Ultrasonic"
     //% blockId=jelly_ultrasonic_on_detected
     //% block="on ultrasonic object detected within %distance %unit"
-    //% weight=314
+    //% weight=388
     export function onUltrasonicObjectDetected(distance: number, unit: UltrasonicUnit, handler: () => void): void {
         if (distance <= 0) return;
         if (!ultrasonicState) {
