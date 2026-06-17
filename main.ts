@@ -1443,7 +1443,19 @@ namespace jellystem {
     }
 
     /**
-     * Draw a rectangle on the OLED screen using two corner points.
+     * Rectangle style — outline only, or filled solid.
+     */
+    export enum OledRectStyle {
+        //% block="outline"
+        Outline = 0,
+        //% block="filled"
+        Filled = 1
+    }
+
+    /**
+     * Draw a rectangle on the OLED screen. Pick outline or filled.
+     * Screen is 128 pixels wide (x) and 64 pixels tall (y).
+     * @param style outline or filled
      * @param x0 top-left x (0-127), eg: 10
      * @param y0 top-left y (0-63), eg: 10
      * @param x1 bottom-right x (0-127), eg: 60
@@ -1451,18 +1463,33 @@ namespace jellystem {
      */
     //% group="OLED Display"
     //% blockId=jelly_oled_draw_rect
-    //% block="OLED rectangle from x %x0 y %y0 to x %x1 y %y1"
+    //% block="OLED %style rectangle from x %x0 y %y0 to x %x1 y %y1"
     //% weight=304
-    export function oledRect(x0: number, y0: number, x1: number, y1: number): void {
-        OLED.drawRectangle(x0, y0, x1, y1)
+    export function oledRect(style: OledRectStyle, x0: number, y0: number, x1: number, y1: number): void {
+        if (style === OledRectStyle.Filled) {
+            // The underlying library has no drawFilledRectangle, so we stack
+            // horizontal lines to fill the area.
+            let top = Math.min(y0, y1)
+            let bottom = Math.max(y0, y1)
+            let left = Math.min(x0, x1)
+            let right = Math.max(x0, x1)
+            for (let row = top; row <= bottom; row++) {
+                OLED.drawLine(left, row, right, row)
+            }
+        } else {
+            OLED.drawRectangle(x0, y0, x1, y1)
+        }
     }
 
     /**
      * Draw a circle on the OLED screen. Pick outline or filled.
+     * Note: filled circles use column-by-column lines internally. Large filled
+     * circles (radius > ~12) may appear slightly rough at the edges — this is
+     * a limitation of the SSD1306 page-based pixel buffer, not a bug.
+     * @param style outline or filled
      * @param x centre x position (0-127), eg: 64
      * @param y centre y position (0-63), eg: 32
      * @param r radius in pixels, eg: 15
-     * @param style outline or filled
      */
     //% group="OLED Display"
     //% blockId=jelly_oled_draw_circle
