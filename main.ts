@@ -1368,7 +1368,7 @@ namespace jellystem {
      * Set up the OLED display. Run this once in "on start".
      * Plug the display into the I2C port: SDA to P20, SCL to P19.
      */
-    //% group="Display"
+    //% group="OLED Display"
     //% blockId=jelly_oled_init
     //% block="set up OLED display on I2C (P19/P20)"
     //% weight=310
@@ -1379,7 +1379,7 @@ namespace jellystem {
     /**
      * Erase everything on the OLED screen.
      */
-    //% group="Display"
+    //% group="OLED Display"
     //% blockId=jelly_oled_clear
     //% block="OLED clear screen"
     //% weight=309
@@ -1392,7 +1392,7 @@ namespace jellystem {
      * Each call goes on its own line — up to 8 lines fit on screen.
      * @param text the text to display, eg: "Hello!"
      */
-    //% group="Display"
+    //% group="OLED Display"
     //% blockId=jelly_oled_display_string
     //% block="OLED display %text"
     //% weight=308
@@ -1404,7 +1404,7 @@ namespace jellystem {
      * Display a number on the OLED screen on its own line.
      * @param num the number to display, eg: 42
      */
-    //% group="Display"
+    //% group="OLED Display"
     //% blockId=jelly_oled_display_number
     //% block="OLED display number %num"
     //% weight=307
@@ -1417,7 +1417,7 @@ namespace jellystem {
      * Call oledInit first. Calling this multiple times updates the bar.
      * @param percent how full the bar is, from 0 to 100
      */
-    //% group="Display"
+    //% group="OLED Display"
     //% blockId=jelly_oled_bar
     //% block="OLED progress bar %percent \\%"
     //% percent.min=0 percent.max=100
@@ -1434,7 +1434,7 @@ namespace jellystem {
      * @param x1 end x (0-127), eg: 50
      * @param y1 end y (0-63), eg: 30
      */
-    //% group="Display"
+    //% group="OLED Display"
     //% blockId=jelly_oled_draw_line
     //% block="OLED line from x %x0 y %y0 to x %x1 y %y1"
     //% weight=305
@@ -1449,7 +1449,7 @@ namespace jellystem {
      * @param x1 bottom-right x (0-127), eg: 60
      * @param y1 bottom-right y (0-63), eg: 40
      */
-    //% group="Display"
+    //% group="OLED Display"
     //% blockId=jelly_oled_draw_rect
     //% block="OLED rectangle from x %x0 y %y0 to x %x1 y %y1"
     //% weight=304
@@ -1464,11 +1464,12 @@ namespace jellystem {
      * @param r radius in pixels, eg: 15
      * @param style outline or filled
      */
-    //% group="Display"
+    //% group="OLED Display"
     //% blockId=jelly_oled_draw_circle
     //% block="OLED %style circle at x %x y %y radius %r"
+    //% x.defl=64 y.defl=32 r.defl=15
     //% weight=303
-    export function oledCircle(x: number, y: number, r: number, style: OledCircleStyle): void {
+    export function oledCircle(style: OledCircleStyle, x: number, y: number, r: number): void {
         if (style === OledCircleStyle.Filled) {
             OLED.drawFilledCircle(x, y, r)
         } else {
