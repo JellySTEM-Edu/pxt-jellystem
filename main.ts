@@ -1351,6 +1351,160 @@ namespace jellystem {
         return neopixel.hsl(h, s, l);
     }
 
+    // --- OLED 128×64 DISPLAY (via tinkertanker/pxt-oled-ssd1306 v2.0.18) ---
+
+    /**
+     * Set up the OLED display. Run this once in "on start".
+     */
+    //% group="Display"
+    //% blockId=jelly_oled_init
+    //% block="set up OLED display"
+    //% weight=310
+    export function oledInit(): void {
+        OLED.init(128, 64)
+    }
+
+    /**
+     * Clear everything on the OLED display.
+     */
+    //% group="Display"
+    //% blockId=jelly_oled_clear
+    //% block="OLED clear"
+    //% weight=309
+    export function oledClear(): void {
+        OLED.clear()
+    }
+
+    /**
+     * Show a line of text on the OLED display, then move to the next line.
+     * @param text the text to show
+     */
+    //% group="Display"
+    //% blockId=jelly_oled_show_string
+    //% block="OLED show %text"
+    //% weight=308
+    export function oledShowString(text: string): void {
+        OLED.writeStringNewLine(text)
+    }
+
+    /**
+     * Show a number on the OLED display, then move to the next line.
+     * @param num the number to show
+     */
+    //% group="Display"
+    //% blockId=jelly_oled_show_number
+    //% block="OLED show number %num"
+    //% weight=307
+    export function oledShowNumber(num: number): void {
+        OLED.writeNumNewLine(num)
+    }
+
+    /**
+     * Show text on the OLED display without moving to the next line.
+     * @param text the text to show
+     */
+    //% group="Display"
+    //% blockId=jelly_oled_write_string
+    //% block="OLED write %text"
+    //% weight=306
+    export function oledWriteString(text: string): void {
+        OLED.writeString(text)
+    }
+
+    /**
+     * Show a number on the OLED display without moving to the next line.
+     * @param num the number to show
+     */
+    //% group="Display"
+    //% blockId=jelly_oled_write_number
+    //% block="OLED write number %num"
+    //% weight=305
+    export function oledWriteNumber(num: number): void {
+        OLED.writeNum(num)
+    }
+
+    /**
+     * Move to the next line on the OLED display.
+     */
+    //% group="Display"
+    //% blockId=jelly_oled_newline
+    //% block="OLED new line"
+    //% weight=304
+    export function oledNewLine(): void {
+        OLED.newLine()
+    }
+
+    /**
+     * Show a loading bar on the OLED display.
+     * @param percent how full the bar is, from 0 to 100
+     */
+    //% group="Display"
+    //% blockId=jelly_oled_bar
+    //% block="OLED progress bar %percent \\%"
+    //% percent.min=0 percent.max=100
+    //% weight=303
+    export function oledProgressBar(percent: number): void {
+        OLED.drawLoading(percent)
+    }
+
+    /**
+     * Draw a line on the OLED display.
+     * @param x0 start x position (0-127)
+     * @param y0 start y position (0-63)
+     * @param x1 end x position (0-127)
+     * @param y1 end y position (0-63)
+     */
+    //% group="Display"
+    //% blockId=jelly_oled_draw_line
+    //% block="OLED line from x %x0 y %y0 to x %x1 y %y1"
+    //% weight=302
+    export function oledLine(x0: number, y0: number, x1: number, y1: number): void {
+        OLED.drawLine(x0, y0, x1, y1)
+    }
+
+    /**
+     * Draw a rectangle outline on the OLED display.
+     * @param x0 top-left x (0-127)
+     * @param y0 top-left y (0-63)
+     * @param x1 bottom-right x (0-127)
+     * @param y1 bottom-right y (0-63)
+     */
+    //% group="Display"
+    //% blockId=jelly_oled_draw_rect
+    //% block="OLED rectangle from x %x0 y %y0 to x %x1 y %y1"
+    //% weight=301
+    export function oledRect(x0: number, y0: number, x1: number, y1: number): void {
+        OLED.drawRectangle(x0, y0, x1, y1)
+    }
+
+    /**
+     * Draw a circle outline on the OLED display.
+     * @param x centre x position (0-127)
+     * @param y centre y position (0-63)
+     * @param r radius in pixels
+     */
+    //% group="Display"
+    //% blockId=jelly_oled_draw_circle
+    //% block="OLED circle at x %x y %y radius %r"
+    //% weight=300
+    export function oledCircle(x: number, y: number, r: number): void {
+        OLED.drawCircle(x, y, r)
+    }
+
+    /**
+     * Draw a filled circle on the OLED display.
+     * @param x centre x position (0-127)
+     * @param y centre y position (0-63)
+     * @param r radius in pixels
+     */
+    //% group="Display"
+    //% blockId=jelly_oled_draw_filled_circle
+    //% block="OLED filled circle at x %x y %y radius %r"
+    //% weight=299
+    export function oledFilledCircle(x: number, y: number, r: number): void {
+        OLED.drawFilledCircle(x, y, r)
+    }
+
 }
 
 // --- SILENT SIDEBAR OVERRIDE LAYER ---
@@ -1360,3 +1514,6 @@ namespace neopixel { }
 
 //% deprecated=true
 namespace servos { }
+
+//% deprecated=true
+namespace OLED { }
