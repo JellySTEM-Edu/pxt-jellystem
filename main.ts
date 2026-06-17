@@ -246,7 +246,7 @@ namespace jellystem {
      */
     //% group="Motors"
     //% weight=378
-    //%block="set %motor to stop"
+    //% block="stop %motor"
     export function wheelStop(motor: Motors): void {
         if (motor == Motors.Motor1 || motor == Motors.AllMotors) {
             motor1Speed = 0; // SYNC STATE
@@ -263,7 +263,7 @@ namespace jellystem {
      */
     //% group="Motors"
     //% weight=377
-    //%block="set %motor to %mode"
+    //% block="%motor %mode"
     export function wheelBrake(motor: Motors, mode: MotorMode): void {
         if (motor == Motors.Motor1 || motor == Motors.AllMotors) {
             motor1Speed = 0;
@@ -306,7 +306,7 @@ namespace jellystem {
          */
     //% group="Motors"
     //% blockId=jellystem_motor_accelerate
-    //% block="change %motor to speed %targetSpeed\\% over %duration ms" 
+    //% block="ramp %motor to %targetSpeed\\% over %duration ms" 
     //% targetSpeed.min=-100 targetSpeed.max=100
     //% duration.shadow=timePicker
     //% weight=85
@@ -375,7 +375,7 @@ namespace jellystem {
     * @param onOff - Turn LED on or off.
     */
     //% group="LEDs"
-    //% block="set %led state %onOff"
+    //% block="turn %led %onOff"
     //% weight=370
     //% onOff.shadow=toggleOnOff
     export function setLed(led: Leds, onOff: boolean) {
@@ -397,7 +397,7 @@ namespace jellystem {
       */
     //% group="Infrared sensor"
     //% weight=360
-    //% block="on IR receiving"
+    //% block="on IR remote signal"
     export function irCallBack(handler: () => void) {
         pins.setPull(DigitalPin.P12, PinPullMode.PullUp)
 
@@ -419,7 +419,7 @@ namespace jellystem {
     //% irButton.fieldEditor="gridpicker"
     //% irButton.fieldOptions.columns=3
     //% irButton.fieldOptions.tooltips="false"
-    //% block="IR button %irButton is pressed"
+    //% block="IR button %irButton pressed"
     //% weight=359
     export function irButton(irButton: MshieldIrButtons): boolean {
         return (irVal & 0x00ff) == irButton as number
@@ -444,7 +444,7 @@ namespace jellystem {
      */
     //% group="PWM port"
     //% weight=350
-    //% block="set S1-S4 as %type ports"
+    //% block="set S1–S4 type to %type"
     export function setS1ToS4Type(type: S1ToS4Type): void {
         writeReg2Bytes(0x0f, type);
     }
@@ -456,7 +456,7 @@ namespace jellystem {
      */
     //% group="PWM port"
     //% weight=349
-    //% block="set %index PWM pulse width to %pulseWidth"
+    //% block="set %index PWM to %pulseWidth"
     //% pulseWidth.min=0 pulseWidth.max=200
     //% pulseWidth.defl=0
     export function extendPwmControl(index: PwmAndServoIndex, pulseWidth: number): void {
@@ -477,7 +477,7 @@ namespace jellystem {
      */
     //% group="PWM port"
     //% weight=348
-    //% block="set %index %servoType servo angle to %angle°"
+    //% block="set %index %servoType servo to %angle°"
     //% angle.defl=0
     export function extendServoControl(index: PwmAndServoIndex, servoType: ServoType, angle: number): void {
         let angleMap: number = 0;
@@ -630,7 +630,7 @@ namespace jellystem {
      */
     //% group="Battery"
     //% weight=340
-    //% block="battery level: %batType"
+    //% block="battery level with %batType"
     export function batteryLevel(batType: BatteryType): number {
         writeReg1Byte(batType);
 
@@ -664,6 +664,404 @@ namespace jellystem {
 
         let mCarVersions = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false);
         return `V${mCarVersions}`;
+    }
+
+    // =========================================================================
+    // --- IR DISTANCE SENSOR: SHARP GP2Y0A41SK0F ---
+    // =========================================================================
+
+    export enum IrDistanceUnit {
+        //% block="cm"
+        Cm = 0,
+        //% block="mm"
+        Mm = 1,
+        //% block="inch"
+        Inch = 2,
+        //% block="raw"
+        Raw = 3
+    }
+
+    export enum IrDistanceComparison {
+        //% block="closer"
+        Closer = 0,
+        //% block="farther"
+        Farther = 1
+    }
+
+    function internalReadSharpIR(pin: AnalogPin, unit: IrDistanceUnit): number {
+        let raw = pins.analogReadPin(pin);
+        if (unit === IrDistanceUnit.Raw) return raw;
+        if (raw <= 10) return 0;
+        let cm = Math.round(3300 / (raw + 15));
+        if (cm < 4 || cm > 40) return 0;
+        if (unit === IrDistanceUnit.Mm) return cm * 10;
+        if (unit === IrDistanceUnit.Inch) return Math.round(cm / 2.54);
+        return cm;
+    }
+
+    /**
+     * Set up the Sharp IR distance sensor on a pin.
+     * Run this once in "on start". Warms up the sensor so the first reading is stable.
+     * @param pin the pin the sensor is plugged into, eg: AnalogPin.P0
+     */
+    //% subcategory="Distance Sensors"
+    //% group="IR Distance"
+    //% blockId=jelly_ir_setup
+    //% block="set up IR sensor at %pin"
+    //% weight=396
+    export function setUpIrSensor(pin: AnalogPin): void {
+        for (let i = 0; i < 5; i++) {
+            pins.analogReadPin(pin);
+            basic.pause(10);
+        }
+    }
+
+    /**
+     * Reads how far away the nearest object is using the Sharp IR sensor.
+     * Returns 0 if nothing is in range.
+     * @param pin the pin the sensor is plugged into, eg: AnalogPin.P0
+     * @param unit cm, mm, inch, or raw
+     */
+    //% subcategory="Distance Sensors"
+    //% group="IR Distance"
+    //% blockId=jelly_ir_distance_read
+    //% block="IR distance at %pin in %unit"
+    //% weight=395
+    export function readIrDistance(pin: AnalogPin, unit: IrDistanceUnit): number {
+        return internalReadSharpIR(pin, unit);
+    }
+
+    /**
+     * Is an object closer or farther than a distance you choose?
+     * Returns true or false. Includes blind-spot safety.
+     * @param pin the pin the sensor is plugged into, eg: AnalogPin.P0
+     * @param comparison closer or farther
+     * @param threshold the distance to compare against, eg: 15
+     * @param unit cm, mm, or inch
+     */
+    //% subcategory="Distance Sensors"
+    //% group="IR Distance"
+    //% blockId=jelly_ir_distance_check
+    //% block="IR distance %comparison than %threshold %unit at %pin"
+    //% weight=394
+    export function checkIrDistance(pin: AnalogPin, comparison: IrDistanceComparison, threshold: number, unit: IrDistanceUnit): boolean {
+        let raw = pins.analogReadPin(pin);
+        let d = internalReadSharpIR(pin, unit);
+        if (comparison === IrDistanceComparison.Closer) {
+            return (d > 0 && d < threshold) || (d === 0 && raw > 300);
+        } else {
+            return (d > threshold) || (d === 0 && raw <= 300);
+        }
+    }
+
+    /**
+     * Run code every time an object crosses a distance threshold on the IR sensor.
+     * @param pin the pin the sensor is plugged into, eg: AnalogPin.P0
+     * @param comparison closer or farther
+     * @param threshold the distance to watch for, eg: 15
+     * @param unit cm, mm, or inch
+     * @param handler code to run when the threshold is crossed
+     */
+    //% subcategory="Distance Sensors"
+    //% group="IR Distance"
+    //% blockId=jelly_ir_on_cross
+    //% block="on IR %comparison than %threshold %unit at %pin"
+    //% weight=393
+    export function onIrDistanceCrossed(pin: AnalogPin, comparison: IrDistanceComparison, threshold: number, unit: IrDistanceUnit, handler: () => void): void {
+        control.inBackground(() => {
+            let stableState = checkIrDistance(pin, comparison, threshold, unit);
+            let candidateState = stableState;
+            let durationStable = 0;
+            const CHECK_INTERVAL = 50;
+            const DEBOUNCE_REQUIRED = 200;
+            while (true) {
+                basic.pause(CHECK_INTERVAL);
+                let currentState = checkIrDistance(pin, comparison, threshold, unit);
+                if (currentState !== stableState) {
+                    if (currentState === candidateState) {
+                        durationStable += CHECK_INTERVAL;
+                        if (durationStable >= DEBOUNCE_REQUIRED) {
+                            stableState = currentState;
+                            handler();
+                        }
+                    } else {
+                        candidateState = currentState;
+                        durationStable = CHECK_INTERVAL;
+                    }
+                } else {
+                    candidateState = stableState;
+                    durationStable = 0;
+                }
+            }
+        });
+    }
+
+    /**
+     * Run code once the first time an object comes within a distance you set.
+     * Re-arms itself automatically once the object moves away.
+     * @param pin the pin the sensor is plugged into, eg: AnalogPin.P0
+     * @param threshold the detection distance, eg: 15
+     * @param unit cm, mm, or inch
+     * @param handler code to run when something is detected
+     */
+    //% subcategory="Distance Sensors"
+    //% group="IR Distance"
+    //% blockId=jelly_ir_on_detected
+    //% block="on IR object detected within %threshold %unit at %pin"
+    //% weight=392
+    export function onIrObjectDetected(pin: AnalogPin, threshold: number, unit: IrDistanceUnit, handler: () => void): void {
+        control.inBackground(() => {
+            let isInside = checkIrDistance(pin, IrDistanceComparison.Closer, threshold, unit);
+            while (true) {
+                basic.pause(50);
+                let currentlyInside = checkIrDistance(pin, IrDistanceComparison.Closer, threshold, unit);
+                if (currentlyInside && !isInside) {
+                    isInside = true;
+                    handler();
+                } else if (!currentlyInside && isInside) {
+                    isInside = false;
+                }
+            }
+        });
+    }
+
+    // =========================================================================
+    // --- ULTRASONIC DISTANCE SENSOR (HC-SR04 / RCWL-1601) ---
+    // Adapted from MakerBit ultrasonic extension by 1010Technologies
+    // github.com/1010Technologies/pxt-makerbit-ultrasonic — MIT License
+    // =========================================================================
+
+    export enum UltrasonicModel {
+        //% block="HC-SR04"
+        HC_SR04 = 58,
+        //% block="RCWL-1601"
+        RCWL_1601 = 50
+    }
+
+    export enum UltrasonicUnit {
+        //% block="cm"
+        Cm = 0,
+        //% block="mm"
+        Mm = 1,
+        //% block="inch"
+        Inch = 2,
+        //% block="raw"
+        Raw = 3
+    }
+
+    export enum UltrasonicComparison {
+        //% block="closer"
+        Closer = 0,
+        //% block="farther"
+        Farther = 1
+    }
+
+    const JELLY_ULTRASONIC_EVENT_ID = 700
+    const ULTRASONIC_MAX_TRAVEL_TIME = 17400
+    const ULTRASONIC_MEASUREMENTS = 3
+    const ULTRASONIC_PULSE_INTERVAL_MS = 145
+
+    interface UltrasonicRoundTrip { ts: number; rtt: number }
+    interface UltrasonicDevice {
+        trig: DigitalPin | undefined
+        model: UltrasonicModel
+        roundTrips: UltrasonicRoundTrip[]
+        medianRoundTrip: number
+        travelTimeObservers: number[]
+    }
+    let ultrasonicState: UltrasonicDevice
+
+    function ultrasonicMedian(values: number[]): number {
+        values.sort((a, b) => a - b)
+        return values[(values.length - 1) >> 1]
+    }
+
+    function ultrasonicTriggerPulse(): void {
+        let trig = ultrasonicState.trig;
+        if (trig === undefined) return;
+        pins.setPull(trig, PinPullMode.PullNone);
+        pins.digitalWritePin(trig, 0);
+        control.waitMicros(2);
+        pins.digitalWritePin(trig, 1);
+        control.waitMicros(10);
+        pins.digitalWritePin(trig, 0);
+    }
+
+    function ultrasonicTriggerObservers(): void {
+        for (let i = 0; i < ultrasonicState.travelTimeObservers.length; i++) {
+            const threshold = ultrasonicState.travelTimeObservers[i]
+            if (threshold > 0 && ultrasonicState.medianRoundTrip <= threshold) {
+                control.raiseEvent(JELLY_ULTRASONIC_EVENT_ID, threshold)
+                ultrasonicState.travelTimeObservers[i] = -threshold
+            } else if (threshold < 0 && ultrasonicState.medianRoundTrip > -threshold) {
+                ultrasonicState.travelTimeObservers[i] = -threshold
+            }
+        }
+    }
+
+    function ultrasonicMeasureInBackground(): void {
+        const trips = ultrasonicState.roundTrips
+        while (true) {
+            const now = input.runningTime()
+            if (trips[trips.length - 1].ts < now - ULTRASONIC_PULSE_INTERVAL_MS - 10) {
+                trips.push({ ts: now, rtt: ULTRASONIC_MAX_TRAVEL_TIME })
+            }
+            while (trips.length > ULTRASONIC_MEASUREMENTS) { trips.shift() }
+            ultrasonicState.medianRoundTrip = ultrasonicMedian(trips.map(urt => urt.rtt))
+            ultrasonicTriggerObservers()
+            ultrasonicTriggerPulse()
+            basic.pause(ULTRASONIC_PULSE_INTERVAL_MS)
+        }
+    }
+
+    function ultrasonicRttToUnit(rtt: number, model: UltrasonicModel, unit: UltrasonicUnit): number {
+        if (unit === UltrasonicUnit.Raw) return rtt;
+        let cm = Math.floor(rtt / (model as number));
+        if (unit === UltrasonicUnit.Mm) return cm * 10;
+        if (unit === UltrasonicUnit.Inch) return Math.floor(cm / 2.54);
+        return cm;
+    }
+
+    /**
+     * Set up the ultrasonic distance sensor. Run this once in "on start".
+     * Pick your sensor model — HC-SR04 or RCWL-1601.
+     * @param model which ultrasonic sensor you are using
+     * @param trig pin connected to Trig, eg: DigitalPin.P13
+     * @param echo pin connected to Echo, eg: DigitalPin.P14
+     */
+    //% subcategory="Distance Sensors"
+    //% group="Ultrasonic"
+    //% blockId=jelly_ultrasonic_setup
+    //% block="set up %model ultrasonic sensor: Trig %trig Echo %echo"
+    //% trig.fieldEditor="gridpicker" trig.fieldOptions.columns=4
+    //% echo.fieldEditor="gridpicker" echo.fieldOptions.columns=4
+    //% weight=392
+    export function connectUltrasonic(model: UltrasonicModel, trig: DigitalPin, echo: DigitalPin): void {
+        if (ultrasonicState && ultrasonicState.trig) return;
+        if (!ultrasonicState) {
+            ultrasonicState = {
+                trig: trig,
+                model: model,
+                roundTrips: [{ ts: 0, rtt: ULTRASONIC_MAX_TRAVEL_TIME }],
+                medianRoundTrip: ULTRASONIC_MAX_TRAVEL_TIME,
+                travelTimeObservers: []
+            }
+        } else {
+            ultrasonicState.trig = trig;
+            ultrasonicState.model = model;
+        }
+        pins.onPulsed(echo, PulseValue.High, () => {
+            if (pins.pulseDuration() < ULTRASONIC_MAX_TRAVEL_TIME &&
+                ultrasonicState.roundTrips.length <= ULTRASONIC_MEASUREMENTS) {
+                ultrasonicState.roundTrips.push({ ts: input.runningTime(), rtt: pins.pulseDuration() })
+            }
+        })
+        control.inBackground(ultrasonicMeasureInBackground)
+    }
+
+    /**
+     * Reads how far away the nearest object is using the ultrasonic sensor.
+     * Returns -1 if the sensor has not been set up yet.
+     * @param unit cm, mm, inch, or raw
+     */
+    //% subcategory="Distance Sensors"
+    //% group="Ultrasonic"
+    //% blockId=jelly_ultrasonic_distance_read
+    //% block="ultrasonic distance in %unit"
+    //% weight=391
+    export function readUltrasonicDistance(unit: UltrasonicUnit): number {
+        if (!ultrasonicState) return -1;
+        basic.pause(0);
+        return ultrasonicRttToUnit(ultrasonicState.medianRoundTrip, ultrasonicState.model, unit);
+    }
+
+    /**
+     * Is an object closer or farther than a distance you choose?
+     * Returns true or false.
+     * @param comparison closer or farther
+     * @param threshold the distance to compare against, eg: 20
+     * @param unit cm, mm, or inch
+     */
+    //% subcategory="Distance Sensors"
+    //% group="Ultrasonic"
+    //% blockId=jelly_ultrasonic_check
+    //% block="ultrasonic %comparison than %threshold %unit"
+    //% weight=390
+    export function checkUltrasonicDistance(comparison: UltrasonicComparison, threshold: number, unit: UltrasonicUnit): boolean {
+        let d = readUltrasonicDistance(unit);
+        if (d === -1) return false;
+        return comparison === UltrasonicComparison.Closer ? d < threshold : d > threshold;
+    }
+
+    /**
+     * Run code every time an object crosses a distance threshold on the ultrasonic sensor.
+     * @param comparison closer or farther
+     * @param threshold the distance to watch for, eg: 20
+     * @param unit cm, mm, or inch
+     * @param handler code to run when the threshold is crossed
+     */
+    //% subcategory="Distance Sensors"
+    //% group="Ultrasonic"
+    //% blockId=jelly_ultrasonic_on_cross
+    //% block="on ultrasonic %comparison than %threshold %unit"
+    //% weight=389
+    export function onUltrasonicDistanceCrossed(comparison: UltrasonicComparison, threshold: number, unit: UltrasonicUnit, handler: () => void): void {
+        control.inBackground(() => {
+            let stableState = checkUltrasonicDistance(comparison, threshold, unit);
+            let candidateState = stableState;
+            let durationStable = 0;
+            const CHECK_INTERVAL = 50;
+            const DEBOUNCE_REQUIRED = 200;
+            while (true) {
+                basic.pause(CHECK_INTERVAL);
+                let currentState = checkUltrasonicDistance(comparison, threshold, unit);
+                if (currentState !== stableState) {
+                    if (currentState === candidateState) {
+                        durationStable += CHECK_INTERVAL;
+                        if (durationStable >= DEBOUNCE_REQUIRED) {
+                            stableState = currentState;
+                            handler();
+                        }
+                    } else {
+                        candidateState = currentState;
+                        durationStable = CHECK_INTERVAL;
+                    }
+                } else {
+                    candidateState = stableState;
+                    durationStable = 0;
+                }
+            }
+        });
+    }
+
+    /**
+     * Run code once the first time an object comes within a distance you set.
+     * Re-arms itself automatically once the object moves away.
+     * @param distance the detection distance, eg: 20
+     * @param unit cm, mm, or inch
+     * @param handler code to run when something is detected
+     */
+    //% subcategory="Distance Sensors"
+    //% group="Ultrasonic"
+    //% blockId=jelly_ultrasonic_on_detected
+    //% block="on ultrasonic object detected within %distance %unit"
+    //% weight=388
+    export function onUltrasonicObjectDetected(distance: number, unit: UltrasonicUnit, handler: () => void): void {
+        if (distance <= 0) return;
+        if (!ultrasonicState) {
+            ultrasonicState = {
+                trig: undefined,
+                model: UltrasonicModel.HC_SR04,
+                roundTrips: [{ ts: 0, rtt: ULTRASONIC_MAX_TRAVEL_TIME }],
+                medianRoundTrip: ULTRASONIC_MAX_TRAVEL_TIME,
+                travelTimeObservers: []
+            }
+        }
+        let modelDivisor = ultrasonicState.model as number;
+        let divisor = (unit === UltrasonicUnit.Inch) ? Math.floor(modelDivisor * 2.54) : (unit === UltrasonicUnit.Mm) ? Math.floor(modelDivisor / 10) : modelDivisor;
+        const travelTimeThreshold = Math.imul(distance, divisor);
+        ultrasonicState.travelTimeObservers.push(travelTimeThreshold);
+        control.onEvent(JELLY_ULTRASONIC_EVENT_ID, travelTimeThreshold, () => { handler(); });
     }
 
     // =========================================================================
@@ -953,357 +1351,6 @@ namespace jellystem {
         return neopixel.hsl(h, s, l);
     }
 
-    // =========================================================================
-    // --- IR DISTANCE SENSOR: SHARP GP2Y0A41SK0F ---
-    // =========================================================================
-
-    export enum IrDistanceUnit {
-        //% block="cm"
-        Cm = 0,
-        //% block="mm"
-        Mm = 1,
-        //% block="inch"
-        Inch = 2,
-        //% block="raw"
-        Raw = 3
-    }
-
-    export enum IrDistanceComparison {
-        //% block="closer"
-        Closer = 0,
-        //% block="farther"
-        Farther = 1
-    }
-
-    function internalReadSharpIR(pin: AnalogPin, unit: IrDistanceUnit): number {
-        let raw = pins.analogReadPin(pin);
-        if (unit === IrDistanceUnit.Raw) return raw;
-        if (raw <= 10) return 0;
-        let cm = Math.round(3300 / (raw + 15));
-        if (cm < 4 || cm > 40) return 0;
-        if (unit === IrDistanceUnit.Mm) return cm * 10;
-        if (unit === IrDistanceUnit.Inch) return Math.round(cm / 2.54);
-        return cm;
-    }
-
-    /**
-     * Reads how far away the nearest object is using the Sharp IR sensor.
-     * Returns 0 if nothing is in range.
-     * @param pin the pin the sensor is plugged into, eg: AnalogPin.P0
-     * @param unit cm, mm, inch, or raw
-     */
-    //% subcategory="Distance Sensors"
-    //% group="IR Distance"
-    //% blockId=jelly_ir_distance_read
-    //% block="IR distance at %pin in %unit"
-    //% weight=395
-    export function readIrDistance(pin: AnalogPin, unit: IrDistanceUnit): number {
-        return internalReadSharpIR(pin, unit);
-    }
-
-    /**
-     * Is an object closer or farther than a distance you choose?
-     * Returns true or false. Includes blind-spot safety.
-     * @param pin the pin the sensor is plugged into, eg: AnalogPin.P0
-     * @param comparison closer or farther
-     * @param threshold the distance to compare against, eg: 15
-     * @param unit cm, mm, or inch
-     */
-    //% subcategory="Distance Sensors"
-    //% group="IR Distance"
-    //% blockId=jelly_ir_distance_check
-    //% block="IR distance %comparison than %threshold %unit at %pin"
-    //% weight=394
-    export function checkIrDistance(pin: AnalogPin, comparison: IrDistanceComparison, threshold: number, unit: IrDistanceUnit): boolean {
-        let raw = pins.analogReadPin(pin);
-        let d = internalReadSharpIR(pin, unit);
-        if (comparison === IrDistanceComparison.Closer) {
-            return (d > 0 && d < threshold) || (d === 0 && raw > 300);
-        } else {
-            return (d > threshold) || (d === 0 && raw <= 300);
-        }
-    }
-
-    /**
-     * Run code every time an object crosses a distance threshold on the IR sensor.
-     * @param pin the pin the sensor is plugged into, eg: AnalogPin.P0
-     * @param comparison closer or farther
-     * @param threshold the distance to watch for, eg: 15
-     * @param unit cm, mm, or inch
-     * @param handler code to run when the threshold is crossed
-     */
-    //% subcategory="Distance Sensors"
-    //% group="IR Distance"
-    //% blockId=jelly_ir_on_cross
-    //% block="on IR %comparison than %threshold %unit at %pin"
-    //% weight=393
-    export function onIrDistanceCrossed(pin: AnalogPin, comparison: IrDistanceComparison, threshold: number, unit: IrDistanceUnit, handler: () => void): void {
-        control.inBackground(() => {
-            let stableState = checkIrDistance(pin, comparison, threshold, unit);
-            let candidateState = stableState;
-            let durationStable = 0;
-            const CHECK_INTERVAL = 50;
-            const DEBOUNCE_REQUIRED = 200;
-            while (true) {
-                basic.pause(CHECK_INTERVAL);
-                let currentState = checkIrDistance(pin, comparison, threshold, unit);
-                if (currentState !== stableState) {
-                    if (currentState === candidateState) {
-                        durationStable += CHECK_INTERVAL;
-                        if (durationStable >= DEBOUNCE_REQUIRED) {
-                            stableState = currentState;
-                            handler();
-                        }
-                    } else {
-                        candidateState = currentState;
-                        durationStable = CHECK_INTERVAL;
-                    }
-                } else {
-                    candidateState = stableState;
-                    durationStable = 0;
-                }
-            }
-        });
-    }
-
-    // =========================================================================
-    // --- ULTRASONIC DISTANCE SENSOR (HC-SR04 / RCWL-1601) ---
-    // Adapted from MakerBit ultrasonic extension by 1010Technologies
-    // github.com/1010Technologies/pxt-makerbit-ultrasonic — MIT License
-    // =========================================================================
-
-    export enum UltrasonicModel {
-        //% block="HC-SR04"
-        HC_SR04 = 58,
-        //% block="RCWL-1601"
-        RCWL_1601 = 50
-    }
-
-    export enum UltrasonicUnit {
-        //% block="cm"
-        Cm = 0,
-        //% block="mm"
-        Mm = 1,
-        //% block="inch"
-        Inch = 2,
-        //% block="raw"
-        Raw = 3
-    }
-
-    export enum UltrasonicComparison {
-        //% block="closer"
-        Closer = 0,
-        //% block="farther"
-        Farther = 1
-    }
-
-    const JELLY_ULTRASONIC_EVENT_ID = 700
-    const ULTRASONIC_MAX_TRAVEL_TIME = 17400
-    const ULTRASONIC_MEASUREMENTS = 3
-    const ULTRASONIC_PULSE_INTERVAL_MS = 145
-
-    interface UltrasonicRoundTrip { ts: number; rtt: number }
-    interface UltrasonicDevice {
-        trig: DigitalPin | undefined
-        model: UltrasonicModel
-        roundTrips: UltrasonicRoundTrip[]
-        medianRoundTrip: number
-        travelTimeObservers: number[]
-    }
-    let ultrasonicState: UltrasonicDevice
-
-    function ultrasonicMedian(values: number[]): number {
-        values.sort((a, b) => a - b)
-        return values[(values.length - 1) >> 1]
-    }
-
-    function ultrasonicTriggerPulse(): void {
-        let trig = ultrasonicState.trig;
-        if (trig === undefined) return;
-        pins.setPull(trig, PinPullMode.PullNone);
-        pins.digitalWritePin(trig, 0);
-        control.waitMicros(2);
-        pins.digitalWritePin(trig, 1);
-        control.waitMicros(10);
-        pins.digitalWritePin(trig, 0);
-    }
-
-    function ultrasonicTriggerObservers(): void {
-        for (let i = 0; i < ultrasonicState.travelTimeObservers.length; i++) {
-            const threshold = ultrasonicState.travelTimeObservers[i]
-            if (threshold > 0 && ultrasonicState.medianRoundTrip <= threshold) {
-                control.raiseEvent(JELLY_ULTRASONIC_EVENT_ID, threshold)
-                ultrasonicState.travelTimeObservers[i] = -threshold
-            } else if (threshold < 0 && ultrasonicState.medianRoundTrip > -threshold) {
-                ultrasonicState.travelTimeObservers[i] = -threshold
-            }
-        }
-    }
-
-    function ultrasonicMeasureInBackground(): void {
-        const trips = ultrasonicState.roundTrips
-        while (true) {
-            const now = input.runningTime()
-            if (trips[trips.length - 1].ts < now - ULTRASONIC_PULSE_INTERVAL_MS - 10) {
-                trips.push({ ts: now, rtt: ULTRASONIC_MAX_TRAVEL_TIME })
-            }
-            while (trips.length > ULTRASONIC_MEASUREMENTS) { trips.shift() }
-            ultrasonicState.medianRoundTrip = ultrasonicMedian(trips.map(urt => urt.rtt))
-            ultrasonicTriggerObservers()
-            ultrasonicTriggerPulse()
-            basic.pause(ULTRASONIC_PULSE_INTERVAL_MS)
-        }
-    }
-
-    function ultrasonicRttToUnit(rtt: number, model: UltrasonicModel, unit: UltrasonicUnit): number {
-        if (unit === UltrasonicUnit.Raw) return rtt;
-        let cm = Math.floor(rtt / (model as number));
-        if (unit === UltrasonicUnit.Mm) return cm * 10;
-        if (unit === UltrasonicUnit.Inch) return Math.floor(cm / 2.54);
-        return cm;
-    }
-
-    /**
-     * Set up the ultrasonic distance sensor. Run this once in "on start".
-     * Pick your sensor model — HC-SR04 or RCWL-1601.
-     * @param model which ultrasonic sensor you are using
-     * @param trig pin connected to Trig, eg: DigitalPin.P13
-     * @param echo pin connected to Echo, eg: DigitalPin.P14
-     */
-    //% subcategory="Distance Sensors"
-    //% group="Ultrasonic"
-    //% blockId=jelly_ultrasonic_setup
-    //% block="set up %model ultrasonic sensor: Trig %trig Echo %echo"
-    //% trig.fieldEditor="gridpicker" trig.fieldOptions.columns=4
-    //% echo.fieldEditor="gridpicker" echo.fieldOptions.columns=4
-    //% weight=392
-    export function connectUltrasonic(model: UltrasonicModel, trig: DigitalPin, echo: DigitalPin): void {
-        if (ultrasonicState && ultrasonicState.trig) return;
-        if (!ultrasonicState) {
-            ultrasonicState = {
-                trig: trig,
-                model: model,
-                roundTrips: [{ ts: 0, rtt: ULTRASONIC_MAX_TRAVEL_TIME }],
-                medianRoundTrip: ULTRASONIC_MAX_TRAVEL_TIME,
-                travelTimeObservers: []
-            }
-        } else {
-            ultrasonicState.trig = trig;
-            ultrasonicState.model = model;
-        }
-        pins.onPulsed(echo, PulseValue.High, () => {
-            if (pins.pulseDuration() < ULTRASONIC_MAX_TRAVEL_TIME &&
-                ultrasonicState.roundTrips.length <= ULTRASONIC_MEASUREMENTS) {
-                ultrasonicState.roundTrips.push({ ts: input.runningTime(), rtt: pins.pulseDuration() })
-            }
-        })
-        control.inBackground(ultrasonicMeasureInBackground)
-    }
-
-    /**
-     * Reads how far away the nearest object is using the ultrasonic sensor.
-     * Returns -1 if the sensor has not been set up yet.
-     * @param unit cm, mm, inch, or raw
-     */
-    //% subcategory="Distance Sensors"
-    //% group="Ultrasonic"
-    //% blockId=jelly_ultrasonic_distance_read
-    //% block="ultrasonic distance in %unit"
-    //% weight=391
-    export function readUltrasonicDistance(unit: UltrasonicUnit): number {
-        if (!ultrasonicState) return -1;
-        basic.pause(0);
-        return ultrasonicRttToUnit(ultrasonicState.medianRoundTrip, ultrasonicState.model, unit);
-    }
-
-    /**
-     * Is an object closer or farther than a distance you choose?
-     * Returns true or false.
-     * @param comparison closer or farther
-     * @param threshold the distance to compare against, eg: 20
-     * @param unit cm, mm, or inch
-     */
-    //% subcategory="Distance Sensors"
-    //% group="Ultrasonic"
-    //% blockId=jelly_ultrasonic_check
-    //% block="ultrasonic %comparison than %threshold %unit"
-    //% weight=390
-    export function checkUltrasonicDistance(comparison: UltrasonicComparison, threshold: number, unit: UltrasonicUnit): boolean {
-        let d = readUltrasonicDistance(unit);
-        if (d === -1) return false;
-        return comparison === UltrasonicComparison.Closer ? d < threshold : d > threshold;
-    }
-
-    /**
-     * Run code every time an object crosses a distance threshold on the ultrasonic sensor.
-     * @param comparison closer or farther
-     * @param threshold the distance to watch for, eg: 20
-     * @param unit cm, mm, or inch
-     * @param handler code to run when the threshold is crossed
-     */
-    //% subcategory="Distance Sensors"
-    //% group="Ultrasonic"
-    //% blockId=jelly_ultrasonic_on_cross
-    //% block="on ultrasonic %comparison than %threshold %unit"
-    //% weight=389
-    export function onUltrasonicDistanceCrossed(comparison: UltrasonicComparison, threshold: number, unit: UltrasonicUnit, handler: () => void): void {
-        control.inBackground(() => {
-            let stableState = checkUltrasonicDistance(comparison, threshold, unit);
-            let candidateState = stableState;
-            let durationStable = 0;
-            const CHECK_INTERVAL = 50;
-            const DEBOUNCE_REQUIRED = 200;
-            while (true) {
-                basic.pause(CHECK_INTERVAL);
-                let currentState = checkUltrasonicDistance(comparison, threshold, unit);
-                if (currentState !== stableState) {
-                    if (currentState === candidateState) {
-                        durationStable += CHECK_INTERVAL;
-                        if (durationStable >= DEBOUNCE_REQUIRED) {
-                            stableState = currentState;
-                            handler();
-                        }
-                    } else {
-                        candidateState = currentState;
-                        durationStable = CHECK_INTERVAL;
-                    }
-                } else {
-                    candidateState = stableState;
-                    durationStable = 0;
-                }
-            }
-        });
-    }
-
-    /**
-     * Run code once the first time an object comes within a distance you set.
-     * Re-arms itself automatically once the object moves away.
-     * @param distance the detection distance, eg: 20
-     * @param unit cm, mm, or inch
-     * @param handler code to run when something is detected
-     */
-    //% subcategory="Distance Sensors"
-    //% group="Ultrasonic"
-    //% blockId=jelly_ultrasonic_on_detected
-    //% block="on ultrasonic object detected within %distance %unit"
-    //% weight=388
-    export function onUltrasonicObjectDetected(distance: number, unit: UltrasonicUnit, handler: () => void): void {
-        if (distance <= 0) return;
-        if (!ultrasonicState) {
-            ultrasonicState = {
-                trig: undefined,
-                model: UltrasonicModel.HC_SR04,
-                roundTrips: [{ ts: 0, rtt: ULTRASONIC_MAX_TRAVEL_TIME }],
-                medianRoundTrip: ULTRASONIC_MAX_TRAVEL_TIME,
-                travelTimeObservers: []
-            }
-        }
-        let modelDivisor = ultrasonicState.model as number;
-        let divisor = (unit === UltrasonicUnit.Inch) ? Math.floor(modelDivisor * 2.54) : (unit === UltrasonicUnit.Mm) ? Math.floor(modelDivisor / 10) : modelDivisor;
-        const travelTimeThreshold = Math.imul(distance, divisor);
-        ultrasonicState.travelTimeObservers.push(travelTimeThreshold);
-        control.onEvent(JELLY_ULTRASONIC_EVENT_ID, travelTimeThreshold, () => { handler(); });
-    }
 }
 
 // --- SILENT SIDEBAR OVERRIDE LAYER ---
