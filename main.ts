@@ -1073,6 +1073,7 @@ namespace jellystem {
      * @param pin the pin where the neopixel is connected.
      * @param numleds number of leds in the strip, eg: 24,30,60,64
      */
+    //% subcategory="NeoPixel"
     //% group="NeoPixel"
     //% blockId=jelly_neopixel_create
     //% block="NeoPixel at pin %pin|with %numleds|leds as %mode"
@@ -1086,6 +1087,8 @@ namespace jellystem {
      * Shows all LEDs to a given color (range 0-255 for r, g, b).
      * @param rgb RGB color of the LED
      */
+    //% subcategory="NeoPixel"
+    //% subcategory="NeoPixel"
     //% group="NeoPixel"
     //% blockId=jelly_neopixel_show_color
     //% block="%strip|show color %rgb=neopixel_colors"
@@ -1101,6 +1104,7 @@ namespace jellystem {
      * @param startHue the start hue value for the rainbow, eg: 1
      * @param endHue the end hue value for the rainbow, eg: 360
      */
+    //% subcategory="NeoPixel"
     //% group="NeoPixel"
     //% blockId=jelly_neopixel_show_rainbow
     //% block="%strip|show rainbow from %startHue|to %endHue"
@@ -1118,6 +1122,7 @@ namespace jellystem {
      * @param value current value to plot
      * @param high maximum value, eg: 255
      */
+    //% subcategory="NeoPixel"
     //% group="NeoPixel"
     //% blockId=jelly_neopixel_show_bar_graph
     //% block="%strip|show bar graph of %value|up to %high"
@@ -1136,6 +1141,7 @@ namespace jellystem {
      * @param pixeloffset position of the NeoPixel in the strip
      * @param rgb RGB color of the LED
      */
+    //% subcategory="NeoPixel"
     //% group="NeoPixel"
     //% blockId=jelly_neopixel_set_pixel_color
     //% block="%strip|set pixel color at %pixeloffset|to %rgb=neopixel_colors"
@@ -1163,6 +1169,7 @@ namespace jellystem {
      * Turn off all LEDs.
      * You need to call ``show`` to make the changes visible.
      */
+    //% subcategory="NeoPixel"
     //% group="NeoPixel"
     //% blockId=jelly_neopixel_clear
     //% block="%strip|clear"
@@ -1177,6 +1184,7 @@ namespace jellystem {
      * Set the brightness of the strip. This flag only applies to future operation.
      * @param brightness a measure of LED brightness in 0-255. eg: 255
      */
+    //% subcategory="NeoPixel"
     //% group="NeoPixel"
     //% blockId=jelly_neopixel_set_brightness
     //% block="%strip|set brightness %brightness"
@@ -1192,6 +1200,7 @@ namespace jellystem {
      * You need to call ``show`` to make the changes visible.
      * @param offset number of pixels to rotate, eg: 1
      */
+    //% subcategory="NeoPixel"
     //% group="NeoPixel"
     //% blockId=jelly_neopixel_rotate
     //% block="%strip|rotate pixels by %offset"
@@ -1208,6 +1217,7 @@ namespace jellystem {
      * You need to call ``show`` to make the changes visible.
      * @param offset number of pixels to shift, eg: 1
      */
+    //% subcategory="NeoPixel"
     //% group="NeoPixel"
     //% blockId=jelly_neopixel_shift
     //% block="%strip|shift pixels by %offset"
@@ -1224,6 +1234,7 @@ namespace jellystem {
      * @param start offset position where the new range starts
      * @param length total number of LEDs in the range
      */
+    //% subcategory="NeoPixel"
     //% group="NeoPixel"
     //% blockId=jelly_neopixel_range
     //% block="%strip|range from %start|with %length|leds"
@@ -1240,6 +1251,7 @@ namespace jellystem {
      * @param pixeloffset position of the LED in the strip
      * @param white brightness of the white LED, eg: 255
      */
+    //% subcategory="NeoPixel"
     //% group="NeoPixel"
     //% subcategory="More"
     //% blockId=jelly_neopixel_set_pixel_white
@@ -1254,6 +1266,7 @@ namespace jellystem {
     /**
      * Gets the number of pixels declared on the strip.
      */
+    //% subcategory="NeoPixel"
     //% group="NeoPixel"
     //% subcategory="More"
     //% blockId=jelly_neopixel_length
@@ -1268,6 +1281,7 @@ namespace jellystem {
     /**
      * Apply brightness to current colors using a quadratic easing.
      */
+    //% subcategory="NeoPixel"
     //% group="NeoPixel"
     //% subcategory="More"
     //% blockId=jelly_neopixel_ease_brightness
@@ -1283,6 +1297,7 @@ namespace jellystem {
      * Sets the number of pixels in a matrix shaped strip
      * @param width number of pixels in a row
      */
+    //% subcategory="NeoPixel"
     //% group="NeoPixel"
     //% subcategory="More"
     //% blockId=jelly_neopixel_set_matrix_width
@@ -1301,6 +1316,7 @@ namespace jellystem {
      * @param y vertical position
      * @param rgb RGB color of the LED
      */
+    //% subcategory="NeoPixel"
     //% group="NeoPixel"
     //% subcategory="More"
     //% blockId=jelly_neopixel_set_matrix_color
@@ -1317,6 +1333,7 @@ namespace jellystem {
     /**
      * Gets the RGB value of a known color
      */
+    //% subcategory="NeoPixel"
     //% group="NeoPixel"
     //% subcategory="More"
     //% blockId=jelly_neopixel_colors
@@ -1329,6 +1346,7 @@ namespace jellystem {
     /**
      * Converts red, green, blue channels into an RGB color code value.
      */
+    //% subcategory="NeoPixel"
     //% group="NeoPixel"
     //% subcategory="More"
     //% blockId=jelly_neopixel_rgb
@@ -1343,6 +1361,7 @@ namespace jellystem {
      * Converts hue, saturation, luminosity values into an RGB color code value.
      */
     //% group="NeoPixel"
+    //% subcategory="NeoPixel"
     //% blockId=jelly_neopixel_hsl
     //% block="hue %h|saturation %s|luminosity %l"
     //% h.min=0 h.max=360 s.min=0 s.max=99 l.min=0 l.max=99
