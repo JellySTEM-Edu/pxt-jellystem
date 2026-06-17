@@ -1353,11 +1353,84 @@ namespace jellystem {
 
     // --- OLED 128×64 DISPLAY (via tinkertanker/pxt-oled-ssd1306 v2.0.18) ---
     // Hardware: plug the OLED into the I2C port (P19 = SCL, P20 = SDA)
+    //
+    // FRAMEBUFFER RENDERER
+    // The tinkertanker library writes pixels one I2C transaction at a time and
+    // cannot read back display RAM, so filled shapes rendered through it have
+    // page-boundary gaps. We maintain our own 1 KB in-memory framebuffer
+    // (128 cols × 8 pages, 1 byte per cell = 8 rows per byte) and flush it
+    // to the display in a single burst. This gives pixel-perfect fills for
+    // both rectangles and circles.
+    //
+    // Text, the progress bar, and the outline drawLine/drawCircle/drawRectangle
+    // calls still go through the tinkertanker library as before.
+    // After using framebuffer shapes, call oledFlush() to push them to screen.
+
+    const OLED_ADDR = 0x3C
+    const OLED_WIDTH = 128
+    const OLED_PAGES = 8   // 64px / 8px per page
+
+    // 1024-byte framebuffer: fb[page * 128 + col] holds 8 vertical pixels.
+    let oledFb: Buffer = pins.createBuffer(0)
+
+    function oledFbInit(): void {
+        if (oledFb.length === 0) {
+            oledFb = pins.createBuffer(OLED_WIDTH * OLED_PAGES)
+        }
+    }
+
+    function oledFbSetPixel(x: number, y: number): void {
+        if (x < 0 || x >= OLED_WIDTH || y < 0 || y >= 64) return
+        let page = y >> 3           // which page (y / 8)
+        let bit = y & 7             // which bit within the page byte (y % 8)
+        let idx = page * OLED_WIDTH + x
+        oledFb[idx] = oledFb[idx] | (1 << bit)
+    }
+
+    /** Flush the framebuffer to the OLED display. Call after drawing filled shapes. */
+    function oledFbFlush(): void {
+        // Set column address 0..127
+        let cmd = pins.createBuffer(2)
+        cmd[0] = 0x00
+        cmd[1] = 0x21        // SSD1306_SETCOLUMNADRESS
+        pins.i2cWriteBuffer(OLED_ADDR, cmd, false)
+        cmd[1] = 0x00
+        pins.i2cWriteBuffer(OLED_ADDR, cmd, false)
+        cmd[1] = 0x7F        // col 127
+        pins.i2cWriteBuffer(OLED_ADDR, cmd, false)
+        // Set page address 0..7
+        cmd[1] = 0x22        // SSD1306_SETPAGEADRESS
+        pins.i2cWriteBuffer(OLED_ADDR, cmd, false)
+        cmd[1] = 0x00
+        pins.i2cWriteBuffer(OLED_ADDR, cmd, false)
+        cmd[1] = 0x07        // page 7
+        pins.i2cWriteBuffer(OLED_ADDR, cmd, false)
+        // Stream framebuffer in 17-byte chunks (1 control byte + 16 data bytes)
+        let chunk = pins.createBuffer(17)
+        chunk[0] = 0x40      // data mode
+        let total = OLED_WIDTH * OLED_PAGES  // 1024
+        for (let i = 0; i < total; i += 16) {
+            for (let j = 0; j < 16; j++) {
+                chunk[j + 1] = (i + j < total) ? oledFb[i + j] : 0
+            }
+            pins.i2cWriteBuffer(OLED_ADDR, chunk, false)
+        }
+    }
 
     /**
      * Circle style — outline only, or filled solid.
      */
     export enum OledCircleStyle {
+        //% block="outline"
+        Outline = 0,
+        //% block="filled"
+        Filled = 1
+    }
+
+    /**
+     * Rectangle style — outline only, or filled solid.
+     */
+    export enum OledRectStyle {
         //% block="outline"
         Outline = 0,
         //% block="filled"
@@ -1374,6 +1447,8 @@ namespace jellystem {
     //% weight=310
     export function oledInit(): void {
         OLED.init(128, 64)
+        oledFbInit()
+        oledFb.fill(0)
     }
 
     /**
@@ -1385,6 +1460,8 @@ namespace jellystem {
     //% weight=309
     export function oledClear(): void {
         OLED.clear()
+        oledFbInit()
+        oledFb.fill(0)
     }
 
     /**
@@ -1443,18 +1520,9 @@ namespace jellystem {
     }
 
     /**
-     * Rectangle style — outline only, or filled solid.
-     */
-    export enum OledRectStyle {
-        //% block="outline"
-        Outline = 0,
-        //% block="filled"
-        Filled = 1
-    }
-
-    /**
      * Draw a rectangle on the OLED screen. Pick outline or filled.
-     * Screen is 128 pixels wide (x) and 64 pixels tall (y).
+     * Filled rectangles are rendered through the framebuffer for a clean solid fill.
+     * Call oledClear before drawing and shapes will appear immediately.
      * @param style outline or filled
      * @param x0 top-left x (0-127), eg: 10
      * @param y0 top-left y (0-63), eg: 10
@@ -1467,15 +1535,39 @@ namespace jellystem {
     //% weight=304
     export function oledRect(style: OledRectStyle, x0: number, y0: number, x1: number, y1: number): void {
         if (style === OledRectStyle.Filled) {
-            // The underlying library has no drawFilledRectangle, so we stack
-            // horizontal lines to fill the area.
+            oledFbInit()
             let top = Math.min(y0, y1)
             let bottom = Math.max(y0, y1)
             let left = Math.min(x0, x1)
             let right = Math.max(x0, x1)
-            for (let row = top; row <= bottom; row++) {
-                OLED.drawLine(left, row, right, row)
+            // Clamp to screen
+            top = Math.max(0, top)
+            bottom = Math.min(63, bottom)
+            left = Math.max(0, left)
+            right = Math.min(127, right)
+            // Fill every pixel in the region into the framebuffer,
+            // working page by page for efficiency.
+            let pageTop = top >> 3
+            let pageBot = bottom >> 3
+            for (let page = pageTop; page <= pageBot; page++) {
+                // Build the byte mask for this page:
+                // which of the 8 row-bits fall inside [top, bottom]?
+                let rowStart = page * 8
+                let rowEnd = rowStart + 7
+                let bitStart = Math.max(top, rowStart) - rowStart   // 0-7
+                let bitEnd = Math.min(bottom, rowEnd) - rowStart     // 0-7
+                // Set bits bitStart..bitEnd inclusive
+                let mask = 0
+                for (let b = bitStart; b <= bitEnd; b++) {
+                    mask = mask | (1 << b)
+                }
+                // Write mask across every column in the row
+                let base = page * OLED_WIDTH
+                for (let col = left; col <= right; col++) {
+                    oledFb[base + col] = oledFb[base + col] | mask
+                }
             }
+            oledFbFlush()
         } else {
             OLED.drawRectangle(x0, y0, x1, y1)
         }
@@ -1483,9 +1575,8 @@ namespace jellystem {
 
     /**
      * Draw a circle on the OLED screen. Pick outline or filled.
-     * Note: filled circles use column-by-column lines internally. Large filled
-     * circles (radius > ~12) may appear slightly rough at the edges — this is
-     * a limitation of the SSD1306 page-based pixel buffer, not a bug.
+     * Filled circles are rendered through the framebuffer for a clean solid fill
+     * at any radius.
      * @param style outline or filled
      * @param x centre x position (0-127), eg: 64
      * @param y centre y position (0-63), eg: 32
@@ -1498,7 +1589,33 @@ namespace jellystem {
     //% weight=303
     export function oledCircle(style: OledCircleStyle, x: number, y: number, r: number): void {
         if (style === OledCircleStyle.Filled) {
-            OLED.drawFilledCircle(x, y, r)
+            oledFbInit()
+            // Midpoint circle algorithm — for each column dx, compute the
+            // vertical span and fill it in the framebuffer page by page.
+            for (let dx = -r; dx <= r; dx++) {
+                let h = Math.floor(Math.sqrt(r * r - dx * dx))
+                let colX = x + dx
+                let yTop = y - h
+                let yBot = y + h
+                if (colX < 0 || colX >= OLED_WIDTH) continue
+                yTop = Math.max(0, yTop)
+                yBot = Math.min(63, yBot)
+                // Fill this column from yTop to yBot using page-aware masking
+                let pageTop = yTop >> 3
+                let pageBot = yBot >> 3
+                for (let page = pageTop; page <= pageBot; page++) {
+                    let rowStart = page * 8
+                    let bitStart = Math.max(yTop, rowStart) - rowStart
+                    let bitEnd = Math.min(yBot, rowStart + 7) - rowStart
+                    let mask = 0
+                    for (let b = bitStart; b <= bitEnd; b++) {
+                        mask = mask | (1 << b)
+                    }
+                    let idx = page * OLED_WIDTH + colX
+                    oledFb[idx] = oledFb[idx] | mask
+                }
+            }
+            oledFbFlush()
         } else {
             OLED.drawCircle(x, y, r)
         }
