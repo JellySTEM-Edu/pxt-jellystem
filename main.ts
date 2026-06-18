@@ -16,7 +16,7 @@
 */
 
 //% weight=100 color="#246C64" icon="\uf1b2" block="JellySTEM"
-//% subcategories='["mShield", "NeoPixel", "OLED Display", "Distance Sensors", "Servo"]'
+//% subcategories='["mShield", "NeoPixel", "OLED Display", "Distance Sensors"]'
 namespace jellystem {
     export enum MotorsDirection {
         //%block="clockwise"
@@ -427,7 +427,7 @@ namespace jellystem {
      * @param servoType the rotation range of your servo
      * @param angle target angle in degrees, eg: 90
      */
-    //% subcategory="Servo"
+    //% subcategory="mShield"
     //% group="mShield (S1-S4)"
     //% weight=348
     //% block="set %index %servoType servo to %angle°"
@@ -1372,35 +1372,22 @@ namespace jellystem {
     let _stopOnNeutral: boolean[] = [false, false, false]
 
     /**
-     * Prepare the S1-S4 ports to work as servo outputs.
-     * Call this once in "on start" before using any S1-S4 servo block.
-     */
-    //% subcategory="Servo"
-    //% group="mShield (S1-S4)"
-    //% blockId=jelly_servo_s1s4_setup
-    //% block="set up S1-S4 ports as servo"
-    //% weight=355
-    export function setupS1ToS4AsServo(): void {
-        setS1ToS4Type(S1ToS4Type.Servo)
-    }
-
-    /**
      * Turn a servo to a specific angle (0–180°).
      * Works with any port: S1-S4 (mShield) or P0-P2 (edge connector).
      * S1-S4 always uses 180° range — use the dedicated mShield block for 90°/270° types.
      * @param port the port the servo is plugged into
      * @param degrees the angle to move to, eg: 90
      */
-    //% subcategory="Servo"
+    //% subcategory="mShield"
     //% group="Servo"
     //% blockId=jelly_servo_set_angle
-    //% block="set servo %port to %degrees °"
+    //% block="set 180° servo %port to %degrees °"
     //% degrees.min=0 degrees.max=180 degrees.defl=90
     //% weight=350
     export function servoSetAngle(port: ServoPort, degrees: number): void {
         if (port <= 4) {
             // mShield S1-S4: route through I2C (assumes 180° servo type)
-            extendServoControl(port as PwmAndServoIndex, ServoType.Servo180, degrees)
+            extendServoControl(port as unknown as PwmAndServoIndex, ServoType.Servo180, degrees)
         } else {
             // Direct pin: clamp to user-set range, then write natively
             let idx = port - 10
@@ -1416,17 +1403,17 @@ namespace jellystem {
      * @param port the port the servo is plugged into
      * @param speed speed from -100 to 100, eg: 50
      */
-    //% subcategory="Servo"
+    //% subcategory="mShield"
     //% group="Servo"
     //% blockId=jelly_servo_run
-    //% block="run servo %port at %speed \\%"
+    //% block="run 360° servo %port at %speed \\%"
     //% speed.min=-100 speed.max=100 speed.defl=50
     //% weight=349
     export function servoRun(port: ServoPort, speed: number): void {
         speed = Math.max(-100, Math.min(100, speed))
         if (port <= 4) {
             // mShield S1-S4: route through I2C continuous servo control
-            continuousServoControl(port as PwmAndServoIndex, speed)
+            continuousServoControl(port as unknown as PwmAndServoIndex, speed)
         } else {
             let idx = port - 10
             // stopOnNeutral: remove signal entirely when speed = 0
@@ -1445,7 +1432,7 @@ namespace jellystem {
      * For P0-P2: removes the PWM signal completely.
      * @param port the port the servo is plugged into
      */
-    //% subcategory="Servo"
+    //% subcategory="mShield"
     //% group="Servo"
     //% blockId=jelly_servo_stop
     //% block="stop servo %port"
@@ -1453,7 +1440,7 @@ namespace jellystem {
     export function servoStop(port: ServoPort): void {
         if (port <= 4) {
             // mShield: neutral speed = 0, which stops a 360° servo
-            continuousServoControl(port as PwmAndServoIndex, 0)
+            continuousServoControl(port as unknown as PwmAndServoIndex, 0)
         } else {
             // Direct pin: remove PWM signal entirely
             pins.analogWritePin((port - 10) as AnalogPin, 0)
@@ -1467,14 +1454,14 @@ namespace jellystem {
      * @param pin the edge connector pin the servo is on
      * @param micros pulse width in μs, eg: 1500
      */
-    //% subcategory="Servo"
+    //% subcategory="mShield"
     //% group="Direct Pin (P0-P2)"
     //% blockId=jelly_servo_set_pulse
     //% block="set servo %pin pulse to %micros μs"
     //% micros.min=500 micros.max=2500 micros.defl=1500
     //% weight=340
     export function servoSetPulse(pin: ServoPin, micros: number): void {
-        pins.servoSetPulse(pin as AnalogPin, micros)
+        pins.servoSetPulse(pin as unknown as AnalogPin, micros)
     }
 
     /**
@@ -1485,7 +1472,7 @@ namespace jellystem {
      * @param minAngle minimum allowed angle, eg: 0
      * @param maxAngle maximum allowed angle, eg: 180
      */
-    //% subcategory="Servo"
+    //% subcategory="mShield"
     //% group="Direct Pin (P0-P2)"
     //% blockId=jelly_servo_set_range
     //% block="set servo %pin range %minAngle to %maxAngle °"
@@ -1504,7 +1491,7 @@ namespace jellystem {
      * @param pin the edge connector pin the servo is on
      * @param enabled true to stop at neutral position
      */
-    //% subcategory="Servo"
+    //% subcategory="mShield"
     //% group="Direct Pin (P0-P2)"
     //% blockId=jelly_servo_stop_on_neutral
     //% block="set servo %pin stop at middle %enabled"
