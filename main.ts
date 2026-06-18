@@ -502,113 +502,6 @@ namespace jellystem {
     }
 
     // =========================================================================
-    // --- SERVO (via dependency: microsoft/pxt-common-packages/libs/servo) ---
-    // These blocks drive servos on the micro:bit edge connector pins (P0/P1/P2)
-    // directly — no mShield board required. They will be merged with the mShield
-    // PWM port servo blocks in a future update.
-    // =========================================================================
-
-    export enum ServoPin {
-        //% block="P0"
-        P0 = 0,
-        //% block="P1"
-        P1 = 1,
-        //% block="P2"
-        P2 = 2
-    }
-
-    function getServo(pin: ServoPin): servos.Servo {
-        if (pin === ServoPin.P1) return servos.P1;
-        if (pin === ServoPin.P2) return servos.P2;
-        return servos.P0;
-    }
-
-    /**
-     * Turn a positional servo to a specific angle.
-     * 0° = full left, 90° = centre, 180° = full right.
-     * Plug the servo directly into the micro:bit edge connector.
-     * @param pin edge connector pin the servo is on
-     * @param degrees angle to move to, eg: 90
-     */
-    //% subcategory="Servo"
-    //% group="Direct Pin (P0/P1/P2)"
-    //% blockId=jelly_servo_set_angle
-    //% block="set servo %pin to %degrees °"
-    //% degrees.min=0 degrees.max=180 degrees.defl=90
-    //% weight=335
-    export function servoSetAngle(pin: ServoPin, degrees: number): void { getServo(pin).setAngle(degrees); }
-
-    /**
-     * Run a continuous (360°) servo at a set speed.
-     * Positive = forward, negative = backward, 0 = stop.
-     * @param pin edge connector pin the servo is on
-     * @param speed speed from -100 to 100, eg: 50
-     */
-    //% subcategory="Servo"
-    //% group="Direct Pin (P0/P1/P2)"
-    //% blockId=jelly_servo_run
-    //% block="continuous servo %pin run at %speed \\%"
-    //% speed.min=-100 speed.max=100 speed.defl=50
-    //% weight=334
-    export function servoRun(pin: ServoPin, speed: number): void { getServo(pin).run(speed); }
-
-    /**
-     * Stop a servo. It holds its last position but will not resist being moved.
-     * @param pin edge connector pin the servo is on
-     */
-    //% subcategory="Servo"
-    //% group="Direct Pin (P0/P1/P2)"
-    //% blockId=jelly_servo_stop
-    //% block="stop servo %pin"
-    //% weight=333
-    export function servoStop(pin: ServoPin): void { getServo(pin).stop(); }
-
-    /**
-     * Set the servo signal pulse width directly in microseconds.
-     * 1000 μs = far left, 1500 μs = centre, 2000 μs = far right.
-     * Useful for non-standard or fine-tuning scenarios.
-     * @param pin edge connector pin the servo is on
-     * @param micros pulse width in μs, eg: 1500
-     */
-    //% subcategory="Servo"
-    //% group="Direct Pin (P0/P1/P2)"
-    //% blockId=jelly_servo_set_pulse
-    //% block="set servo %pin pulse to %micros μs"
-    //% micros.min=500 micros.max=2500 micros.defl=1500
-    //% weight=332
-    export function servoSetPulse(pin: ServoPin, micros: number): void { getServo(pin).setPulse(micros); }
-
-    /**
-     * Limit the angle range a servo can move to.
-     * Useful if your servo physically cannot reach 0° or 180°.
-     * @param pin edge connector pin the servo is on
-     * @param minAngle minimum allowed angle, eg: 0
-     * @param maxAngle maximum allowed angle, eg: 180
-     */
-    //% subcategory="Servo"
-    //% group="Direct Pin (P0/P1/P2)"
-    //% blockId=jelly_servo_set_range
-    //% block="set servo %pin range %minAngle to %maxAngle °"
-    //% minAngle.min=0 minAngle.max=90 minAngle.defl=0
-    //% maxAngle.min=90 maxAngle.max=180 maxAngle.defl=180
-    //% weight=331
-    export function servoSetRange(pin: ServoPin, minAngle: number, maxAngle: number): void { getServo(pin).setRange(minAngle, maxAngle); }
-
-    /**
-     * Set whether a continuous servo auto-stops when it reaches the centre (90°).
-     * Useful for self-centering steering mechanisms.
-     * @param pin edge connector pin the servo is on
-     * @param enabled true to stop at neutral position
-     */
-    //% subcategory="Servo"
-    //% group="Direct Pin (P0/P1/P2)"
-    //% blockId=jelly_servo_stop_on_neutral
-    //% block="set servo %pin stop at middle %enabled"
-    //% enabled.shadow=toggleOnOff
-    //% weight=330
-    export function servoSetStopOnNeutral(pin: ServoPin, enabled: boolean): void { getServo(pin).setStopOnNeutral(enabled); }
-
-    // =========================================================================
     // --- IR DISTANCE SENSOR: SHARP GP2Y0A41SK0F ---
     // Analog triangulation sensor. Range: 4–40 cm. Connect signal to any analog pin.
     // =========================================================================
@@ -1441,6 +1334,113 @@ namespace jellystem {
             OLED.drawCircle(x, y, r)
         }
     }
+
+    // =========================================================================
+    // --- SERVO (via dependency: microsoft/pxt-common-packages/libs/servo) ---
+    // These blocks drive servos on the micro:bit edge connector pins (P0/P1/P2)
+    // directly — no mShield board required. They will be merged with the mShield
+    // PWM port servo blocks in a future update.
+    // =========================================================================
+
+    export enum ServoPin {
+        //% block="P0"
+        P0 = 0,
+        //% block="P1"
+        P1 = 1,
+        //% block="P2"
+        P2 = 2
+    }
+
+    function getServo(pin: ServoPin): servos.Servo {
+        if (pin === ServoPin.P1) return servos.P1;
+        if (pin === ServoPin.P2) return servos.P2;
+        return servos.P0;
+    }
+
+    /**
+     * Turn a positional servo to a specific angle.
+     * 0° = full left, 90° = centre, 180° = full right.
+     * Plug the servo directly into the micro:bit edge connector.
+     * @param pin edge connector pin the servo is on
+     * @param degrees angle to move to, eg: 90
+     */
+    //% subcategory="Servo"
+    //% group="Direct Pin (P0/P1/P2)"
+    //% blockId=jelly_servo_set_angle
+    //% block="set servo %pin to %degrees °"
+    //% degrees.min=0 degrees.max=180 degrees.defl=90
+    //% weight=335
+    export function servoSetAngle(pin: ServoPin, degrees: number): void { getServo(pin).setAngle(degrees); }
+
+    /**
+     * Run a continuous (360°) servo at a set speed.
+     * Positive = forward, negative = backward, 0 = stop.
+     * @param pin edge connector pin the servo is on
+     * @param speed speed from -100 to 100, eg: 50
+     */
+    //% subcategory="Servo"
+    //% group="Direct Pin (P0/P1/P2)"
+    //% blockId=jelly_servo_run
+    //% block="continuous servo %pin run at %speed \\%"
+    //% speed.min=-100 speed.max=100 speed.defl=50
+    //% weight=334
+    export function servoRun(pin: ServoPin, speed: number): void { getServo(pin).run(speed); }
+
+    /**
+     * Stop a servo. It holds its last position but will not resist being moved.
+     * @param pin edge connector pin the servo is on
+     */
+    //% subcategory="Servo"
+    //% group="Direct Pin (P0/P1/P2)"
+    //% blockId=jelly_servo_stop
+    //% block="stop servo %pin"
+    //% weight=333
+    export function servoStop(pin: ServoPin): void { getServo(pin).stop(); }
+
+    /**
+     * Set the servo signal pulse width directly in microseconds.
+     * 1000 μs = far left, 1500 μs = centre, 2000 μs = far right.
+     * Useful for non-standard or fine-tuning scenarios.
+     * @param pin edge connector pin the servo is on
+     * @param micros pulse width in μs, eg: 1500
+     */
+    //% subcategory="Servo"
+    //% group="Direct Pin (P0/P1/P2)"
+    //% blockId=jelly_servo_set_pulse
+    //% block="set servo %pin pulse to %micros μs"
+    //% micros.min=500 micros.max=2500 micros.defl=1500
+    //% weight=332
+    export function servoSetPulse(pin: ServoPin, micros: number): void { getServo(pin).setPulse(micros); }
+
+    /**
+     * Limit the angle range a servo can move to.
+     * Useful if your servo physically cannot reach 0° or 180°.
+     * @param pin edge connector pin the servo is on
+     * @param minAngle minimum allowed angle, eg: 0
+     * @param maxAngle maximum allowed angle, eg: 180
+     */
+    //% subcategory="Servo"
+    //% group="Direct Pin (P0/P1/P2)"
+    //% blockId=jelly_servo_set_range
+    //% block="set servo %pin range %minAngle to %maxAngle °"
+    //% minAngle.min=0 minAngle.max=90 minAngle.defl=0
+    //% maxAngle.min=90 maxAngle.max=180 maxAngle.defl=180
+    //% weight=331
+    export function servoSetRange(pin: ServoPin, minAngle: number, maxAngle: number): void { getServo(pin).setRange(minAngle, maxAngle); }
+
+    /**
+     * Set whether a continuous servo auto-stops when it reaches the centre (90°).
+     * Useful for self-centering steering mechanisms.
+     * @param pin edge connector pin the servo is on
+     * @param enabled true to stop at neutral position
+     */
+    //% subcategory="Servo"
+    //% group="Direct Pin (P0/P1/P2)"
+    //% blockId=jelly_servo_stop_on_neutral
+    //% block="set servo %pin stop at middle %enabled"
+    //% enabled.shadow=toggleOnOff
+    //% weight=330
+    export function servoSetStopOnNeutral(pin: ServoPin, enabled: boolean): void { getServo(pin).setStopOnNeutral(enabled); }
 
 }
 
