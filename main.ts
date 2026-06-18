@@ -608,6 +608,7 @@ namespace jellystem {
     //% group="PWM Output"
     //% weight=310
     //% block="set S1–S4 type to %type"
+    //% type.defl=2
     export function setS1ToS4Type(type: S1ToS4Type): void { writeReg2Bytes(0x0f, type); }
 
     /**
