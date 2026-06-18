@@ -283,7 +283,7 @@ namespace jellystem {
     //% block="ramp %motor to %targetSpeed\\% over %duration ms"
     //% targetSpeed.min=-100 targetSpeed.max=100
     //% duration.shadow=timePicker
-    //% weight=85
+    //% weight=375
     export function accelerateMotor(motor: Motors, targetSpeed: number, duration: number): void {
         targetSpeed = Math.max(-100, Math.min(100, targetSpeed));
         // Snap any non-zero target below MIN up to MIN to stay out of the dead zone
@@ -395,8 +395,8 @@ namespace jellystem {
      * @param type PWM or servo
      */
     //% subcategory="mShield"
-    //% group="S1-S4 Setup"
-    //% weight=350
+    //% group="PWM Output"
+    //% weight=334
     //% block="set S1–S4 type to %type"
     export function setS1ToS4Type(type: S1ToS4Type): void { writeReg2Bytes(0x0f, type); }
 
@@ -406,8 +406,8 @@ namespace jellystem {
      * @param pulseWidth pulse width value, eg: 100
      */
     //% subcategory="mShield"
-    //% group="S1-S4 Ports"
-    //% weight=349
+    //% group="PWM Output"
+    //% weight=333
     //% block="set %index PWM to %pulseWidth"
     //% pulseWidth.min=0 pulseWidth.max=200
     //% pulseWidth.defl=0
@@ -428,8 +428,8 @@ namespace jellystem {
      * @param angle target angle in degrees, eg: 90
      */
     //% subcategory="mShield"
-    //% group="S1-S4 Ports"
-    //% weight=348
+    //% group="Servo"
+    //% weight=344
     //% block="set %index %servoType servo to %angle°"
     //% angle.defl=0
     export function extendServoControl(index: PwmAndServoIndex, servoType: ServoType, angle: number): void {
@@ -1459,7 +1459,7 @@ namespace jellystem {
     //% blockId=jelly_servo_set_pulse
     //% block="set servo %pin pulse to %micros μs"
     //% micros.min=500 micros.max=2500 micros.defl=1500
-    //% weight=340
+    //% weight=347
     export function servoSetPulse(pin: ServoPin, micros: number): void {
         pins.servoSetPulse(pin as unknown as AnalogPin, micros)
     }
@@ -1473,12 +1473,12 @@ namespace jellystem {
      * @param maxAngle maximum allowed angle, eg: 180
      */
     //% subcategory="mShield"
-    //% group="Direct Pin (P0-P2)"
+    //% group="Servo"
     //% blockId=jelly_servo_set_range
     //% block="set servo %pin range %minAngle to %maxAngle °"
     //% minAngle.min=0 minAngle.max=90 minAngle.defl=0
     //% maxAngle.min=90 maxAngle.max=180 maxAngle.defl=180
-    //% weight=339
+    //% weight=346
     export function servoSetRange(pin: ServoPin, minAngle: number, maxAngle: number): void {
         _servoMin[pin as number] = minAngle
         _servoMax[pin as number] = maxAngle
@@ -1492,11 +1492,11 @@ namespace jellystem {
      * @param enabled true to stop at neutral position
      */
     //% subcategory="mShield"
-    //% group="Direct Pin (P0-P2)"
+    //% group="Servo"
     //% blockId=jelly_servo_stop_on_neutral
     //% block="set servo %pin stop at middle %enabled"
     //% enabled.shadow=toggleOnOff
-    //% weight=338
+    //% weight=345
     export function servoSetStopOnNeutral(pin: ServoPin, enabled: boolean): void {
         _stopOnNeutral[pin as number] = enabled
     }
