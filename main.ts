@@ -16,6 +16,7 @@
 */
 
 //% weight=100 color="#246C64" icon="\uf1b2" block="JellySTEM"
+//% subcategories='["mShield", "Distance Sensors", "NeoPixel", "OLED Display", "Servo"]'
 namespace jellystem {
     export enum MotorsDirection {
         //%block="clockwise"
