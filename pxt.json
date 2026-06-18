@@ -7,7 +7,8 @@
         "core": "*",
         "microphone": "*",
         "neopixel": "github:microsoft/pxt-neopixel#v0.7.3",
-        "servo": "github:microsoft/pxt-common-packages/libs/servo"
+        "servo": "github:microsoft/pxt-common-packages/libs/servo",
+        "oled": "github:tinkertanker/pxt-oled-ssd1306#v2.0.18"
     },
     "files": [
         "main.ts",

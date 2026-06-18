@@ -246,7 +246,7 @@ namespace jellystem {
      */
     //% group="Motors"
     //% weight=378
-    //%block="set %motor to stop"
+    //% block="stop %motor"
     export function wheelStop(motor: Motors): void {
         if (motor == Motors.Motor1 || motor == Motors.AllMotors) {
             motor1Speed = 0; // SYNC STATE
@@ -263,7 +263,7 @@ namespace jellystem {
      */
     //% group="Motors"
     //% weight=377
-    //%block="set %motor to %mode"
+    //% block="%motor %mode"
     export function wheelBrake(motor: Motors, mode: MotorMode): void {
         if (motor == Motors.Motor1 || motor == Motors.AllMotors) {
             motor1Speed = 0;
@@ -306,7 +306,7 @@ namespace jellystem {
          */
     //% group="Motors"
     //% blockId=jellystem_motor_accelerate
-    //% block="change %motor to speed %targetSpeed\\% over %duration ms" 
+    //% block="ramp %motor to %targetSpeed\\% over %duration ms" 
     //% targetSpeed.min=-100 targetSpeed.max=100
     //% duration.shadow=timePicker
     //% weight=85
@@ -375,7 +375,7 @@ namespace jellystem {
     * @param onOff - Turn LED on or off.
     */
     //% group="LEDs"
-    //% block="set %led state %onOff"
+    //% block="turn %led %onOff"
     //% weight=370
     //% onOff.shadow=toggleOnOff
     export function setLed(led: Leds, onOff: boolean) {
@@ -397,7 +397,7 @@ namespace jellystem {
       */
     //% group="Infrared sensor"
     //% weight=360
-    //% block="on IR receiving"
+    //% block="on IR remote signal"
     export function irCallBack(handler: () => void) {
         pins.setPull(DigitalPin.P12, PinPullMode.PullUp)
 
@@ -419,7 +419,7 @@ namespace jellystem {
     //% irButton.fieldEditor="gridpicker"
     //% irButton.fieldOptions.columns=3
     //% irButton.fieldOptions.tooltips="false"
-    //% block="IR button %irButton is pressed"
+    //% block="IR button %irButton pressed"
     //% weight=359
     export function irButton(irButton: MshieldIrButtons): boolean {
         return (irVal & 0x00ff) == irButton as number
@@ -444,7 +444,7 @@ namespace jellystem {
      */
     //% group="PWM port"
     //% weight=350
-    //% block="set S1-S4 as %type ports"
+    //% block="set S1–S4 type to %type"
     export function setS1ToS4Type(type: S1ToS4Type): void {
         writeReg2Bytes(0x0f, type);
     }
@@ -456,7 +456,7 @@ namespace jellystem {
      */
     //% group="PWM port"
     //% weight=349
-    //% block="set %index PWM pulse width to %pulseWidth"
+    //% block="set %index PWM to %pulseWidth"
     //% pulseWidth.min=0 pulseWidth.max=200
     //% pulseWidth.defl=0
     export function extendPwmControl(index: PwmAndServoIndex, pulseWidth: number): void {
@@ -477,7 +477,7 @@ namespace jellystem {
      */
     //% group="PWM port"
     //% weight=348
-    //% block="set %index %servoType servo angle to %angle°"
+    //% block="set %index %servoType servo to %angle°"
     //% angle.defl=0
     export function extendServoControl(index: PwmAndServoIndex, servoType: ServoType, angle: number): void {
         let angleMap: number = 0;
@@ -630,7 +630,7 @@ namespace jellystem {
      */
     //% group="Battery"
     //% weight=340
-    //% block="battery level: %batType"
+    //% block="battery level with %batType"
     export function batteryLevel(batType: BatteryType): number {
         writeReg1Byte(batType);
 
@@ -667,293 +667,6 @@ namespace jellystem {
     }
 
     // =========================================================================
-    // --- NEOPIXEL FULL PARITY WORKSPACE INTEGRATION ---
-    // =========================================================================
-
-    /**
-     * Create a new NeoPixel driver for `numleds` LEDs.
-     * @param pin the pin where the neopixel is connected.
-     * @param numleds number of leds in the strip, eg: 24,30,60,64
-     */
-    //% group="NeoPixel"
-    //% blockId=jelly_neopixel_create
-    //% block="NeoPixel at pin %pin|with %numleds|leds as %mode"
-    //% weight=90 blockGap=8
-    //% blockSetVariable=strip
-    export function create(pin: DigitalPin, numleds: number, mode: NeoPixelMode): neopixel.Strip {
-        return neopixel.create(pin, numleds, mode);
-    }
-
-    /**
-     * Shows all LEDs to a given color (range 0-255 for r, g, b).
-     * @param rgb RGB color of the LED
-     */
-    //% group="NeoPixel"
-    //% blockId=jelly_neopixel_show_color
-    //% block="%strip|show color %rgb=neopixel_colors"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% weight=85 blockGap=8
-    export function showColor(strip: neopixel.Strip, rgb: number): void {
-        strip.showColor(rgb);
-    }
-
-    /**
-     * Shows a rainbow pattern on all LEDs.
-     * @param startHue the start hue value for the rainbow, eg: 1
-     * @param endHue the end hue value for the rainbow, eg: 360
-     */
-    //% group="NeoPixel"
-    //% blockId=jelly_neopixel_show_rainbow
-    //% block="%strip|show rainbow from %startHue|to %endHue"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% startHue.defl=1 endHue.defl=360
-    //% weight=85 blockGap=8
-    export function showRainbow(strip: neopixel.Strip, startHue: number = 1, endHue: number = 360): void {
-        strip.showRainbow(startHue, endHue);
-    }
-
-    /**
-     * Displays a vertical bar graph based on the `value` and `high` value.
-     * If `high` is 0, the chart gets adjusted automatically.
-     * @param value current value to plot
-     * @param high maximum value, eg: 255
-     */
-    //% group="NeoPixel"
-    //% blockId=jelly_neopixel_show_bar_graph
-    //% block="%strip|show bar graph of %value|up to %high"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% weight=84 blockGap=8
-    export function showBarGraph(strip: neopixel.Strip, value: number, high: number): void {
-        strip.showBarGraph(value, high);
-    }
-
-    // --- ADVANCED ("MORE...") NEOPIXEL SUB-GROUP BLOCKS ---
-
-    /**
-     * Set LED to a given color (range 0-255 for r, g, b).
-     * You need to call ``show`` to make the changes visible.
-     * @param pixeloffset position of the NeoPixel in the strip
-     * @param rgb RGB color of the LED
-     */
-    //% group="NeoPixel"
-    //% blockId=jelly_neopixel_set_pixel_color
-    //% block="%strip|set pixel color at %pixeloffset|to %rgb=neopixel_colors"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% weight=80 blockGap=8
-    export function setPixelColor(strip: neopixel.Strip, pixeloffset: number, rgb: number): void {
-        strip.setPixelColor(pixeloffset, rgb);
-    }
-
-    /**
-     * Send all the changes to the strip.
-     */
-    //% group="NeoPixel"
-    //% blockId=jelly_neopixel_show
-    //% block="%strip|show" 
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% weight=79 blockGap=8
-    export function show(strip: neopixel.Strip): void {
-        strip.show();
-    }
-
-    /**
-     * Turn off all LEDs.
-     * You need to call ``show`` to make the changes visible.
-     */
-    //% group="NeoPixel"
-    //% blockId=jelly_neopixel_clear
-    //% block="%strip|clear"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% weight=76 blockGap=8
-    export function clear(strip: neopixel.Strip): void {
-        strip.clear();
-    }
-
-    /**
-     * Set the brightness of the strip. This flag only applies to future operation.
-     * @param brightness a measure of LED brightness in 0-255. eg: 255
-     */
-    //% group="NeoPixel"
-    //% blockId=jelly_neopixel_set_brightness
-    //% block="%strip|set brightness %brightness"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% weight=59 blockGap=8
-    export function setBrightness(strip: neopixel.Strip, brightness: number): void {
-        strip.setBrightness(brightness);
-    }
-
-    /**
-     * Rotate LEDs forward.
-     * You need to call ``show`` to make the changes visible.
-     * @param offset number of pixels to rotate, eg: 1
-     */
-    //% group="NeoPixel"
-    //% blockId=jelly_neopixel_rotate
-    //% block="%strip|rotate pixels by %offset"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% offset.defl=1
-    //% weight=39 blockGap=8
-    export function rotate(strip: neopixel.Strip, offset: number = 1): void {
-        strip.rotate(offset);
-    }
-
-    /**
-     * Shift LEDs forward and clear with a zero.
-     * You need to call ``show`` to make the changes visible.
-     * @param offset number of pixels to shift, eg: 1
-     */
-    //% group="NeoPixel"
-    //% blockId=jelly_neopixel_shift
-    //% block="%strip|shift pixels by %offset"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% offset.defl=1
-    //% weight=40 blockGap=8
-    export function shift(strip: neopixel.Strip, offset: number = 1): void {
-        strip.shift(offset);
-    }
-
-    /**
-     * Create a new sub-range segment out of an existing NeoPixel strip.
-     * @param start offset position where the new range starts
-     * @param length total number of LEDs in the range
-     */
-    //% group="NeoPixel"
-    //% blockId=jelly_neopixel_range
-    //% block="%strip|range from %start|with %length|leds"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% weight=89 blockGap=8
-    //% blockSetVariable=range
-    export function range(strip: neopixel.Strip, start: number, length: number): neopixel.Strip {
-        return strip.range(start, length);
-    }
-
-    /**
-     * Set individual pixel white LED brightness for RGB+W NeoPixels.
-     * @param pixeloffset position of the LED in the strip
-     * @param white brightness of the white LED, eg: 255
-     */
-    //% group="NeoPixel"
-    //% subcategory="More"
-    //% blockId=jelly_neopixel_set_pixel_white
-    //% block="%strip|set pixel white LED at %pixeloffset|to %white"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% weight=80 blockGap=8
-    export function setPixelWhiteLED(strip: neopixel.Strip, pixeloffset: number, white: number): void {
-        strip.setPixelWhiteLED(pixeloffset, white);
-    }
-
-    /**
-     * Gets the number of pixels declared on the strip.
-     */
-    //% group="NeoPixel"
-    //% subcategory="More"
-    //% blockId=jelly_neopixel_length
-    //% block="%strip|length"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% weight=60 blockGap=8
-    export function length(strip: neopixel.Strip): number {
-        return strip.length();
-    }
-
-    /**
-     * Apply brightness to current colors using a quadratic easing.
-     */
-    //% group="NeoPixel"
-    //% subcategory="More"
-    //% blockId=jelly_neopixel_ease_brightness
-    //% block="%strip|ease brightness"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% weight=58 blockGap=8
-    export function easeBrightness(strip: neopixel.Strip): void {
-        strip.easeBrightness();
-    }
-
-    /**
-     * Sets the number of pixels in a matrix shaped strip
-     * @param width number of pixels in a row
-     */
-    //% group="NeoPixel"
-    //% subcategory="More"
-    //% blockId=jelly_neopixel_set_matrix_width
-    //% block="%strip|set matrix width %width"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% weight=5 blockGap=8
-    export function setMatrixWidth(strip: neopixel.Strip, width: number): void {
-        strip.setMatrixWidth(width);
-    }
-
-    /**
-     * Set LED to a given color (range 0-255 for r, g, b) in a matrix shaped strip
-     * You need to call ``show`` to make the changes visible.
-     * @param x horizontal position
-     * @param y vertical position
-     * @param rgb RGB color of the LED
-     */
-    //% group="NeoPixel"
-    //% subcategory="More"
-    //% blockId=jelly_neopixel_set_matrix_color
-    //% block="%strip|set matrix color at x %x|y %y|to %rgb=neopixel_colors"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% weight=4 blockGap=8
-    export function setMatrixColor(strip: neopixel.Strip, x: number, y: number, rgb: number): void {
-        strip.setMatrixColor(x, y, rgb);
-    }
-
-    // --- STATIC COLOR HELPER UTILITIES ---
-
-    /**
-     * Gets the RGB value of a known color
-     */
-    //% group="NeoPixel"
-    //% subcategory="More"
-    //% blockId=jelly_neopixel_colors
-    //% block="%color"
-    //% weight=2 blockGap=8
-    export function colors(color: NeoPixelColors): number {
-        return neopixel.colors(color);
-    }
-
-    /**
-     * Converts red, green, blue channels into an RGB color code value.
-     */
-    //% group="NeoPixel"
-    //% subcategory="More"
-    //% blockId=jelly_neopixel_rgb
-    //% block="red %red|green %green|blue %blue"
-    //% red.min=0 red.max=255 green.min=0 green.max=255 blue.min=0 blue.max=255
-    //% weight=1 blockGap=8
-    export function rgb(red: number, green: number, blue: number): number {
-        return neopixel.rgb(red, green, blue);
-    }
-
-    /**
-     * Converts hue, saturation, luminosity values into an RGB color code value.
-     */
-    //% group="NeoPixel"
-    //% blockId=jelly_neopixel_hsl
-    //% block="hue %h|saturation %s|luminosity %l"
-    //% h.min=0 h.max=360 s.min=0 s.max=99 l.min=0 l.max=99
-    //% weight=63 blockGap=8
-    export function hsl(h: number, s: number, l: number): number {
-        return neopixel.hsl(h, s, l);
-    }
-
-    // =========================================================================
     // --- IR DISTANCE SENSOR: SHARP GP2Y0A41SK0F ---
     // =========================================================================
 
@@ -984,6 +697,23 @@ namespace jellystem {
         if (unit === IrDistanceUnit.Mm) return cm * 10;
         if (unit === IrDistanceUnit.Inch) return Math.round(cm / 2.54);
         return cm;
+    }
+
+    /**
+     * Set up the Sharp IR distance sensor on a pin.
+     * Run this once in "on start". Warms up the sensor so the first reading is stable.
+     * @param pin the pin the sensor is plugged into, eg: AnalogPin.P0
+     */
+    //% subcategory="Distance Sensors"
+    //% group="IR Distance"
+    //% blockId=jelly_ir_setup
+    //% block="set up IR sensor at %pin"
+    //% weight=396
+    export function setUpIrSensor(pin: AnalogPin): void {
+        for (let i = 0; i < 5; i++) {
+            pins.analogReadPin(pin);
+            basic.pause(10);
+        }
     }
 
     /**
@@ -1061,6 +791,35 @@ namespace jellystem {
                 } else {
                     candidateState = stableState;
                     durationStable = 0;
+                }
+            }
+        });
+    }
+
+    /**
+     * Run code once the first time an object comes within a distance you set.
+     * Re-arms itself automatically once the object moves away.
+     * @param pin the pin the sensor is plugged into, eg: AnalogPin.P0
+     * @param threshold the detection distance, eg: 15
+     * @param unit cm, mm, or inch
+     * @param handler code to run when something is detected
+     */
+    //% subcategory="Distance Sensors"
+    //% group="IR Distance"
+    //% blockId=jelly_ir_on_detected
+    //% block="on IR object detected within %threshold %unit at %pin"
+    //% weight=392
+    export function onIrObjectDetected(pin: AnalogPin, threshold: number, unit: IrDistanceUnit, handler: () => void): void {
+        control.inBackground(() => {
+            let isInside = checkIrDistance(pin, IrDistanceComparison.Closer, threshold, unit);
+            while (true) {
+                basic.pause(50);
+                let currentlyInside = checkIrDistance(pin, IrDistanceComparison.Closer, threshold, unit);
+                if (currentlyInside && !isInside) {
+                    isInside = true;
+                    handler();
+                } else if (!currentlyInside && isInside) {
+                    isInside = false;
                 }
             }
         });
@@ -1304,6 +1063,583 @@ namespace jellystem {
         ultrasonicState.travelTimeObservers.push(travelTimeThreshold);
         control.onEvent(JELLY_ULTRASONIC_EVENT_ID, travelTimeThreshold, () => { handler(); });
     }
+
+    // =========================================================================
+    // --- NEOPIXEL FULL PARITY WORKSPACE INTEGRATION ---
+    // =========================================================================
+
+    /**
+     * Create a new NeoPixel driver for `numleds` LEDs.
+     * @param pin the pin where the neopixel is connected.
+     * @param numleds number of leds in the strip, eg: 24,30,60,64
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_create
+    //% block="NeoPixel at pin %pin|with %numleds|leds as %mode"
+    //% weight=90 blockGap=8
+    //% blockSetVariable=strip
+    export function create(pin: DigitalPin, numleds: number, mode: NeoPixelMode): neopixel.Strip {
+        return neopixel.create(pin, numleds, mode);
+    }
+
+    /**
+     * Shows all LEDs to a given color (range 0-255 for r, g, b).
+     * @param rgb RGB color of the LED
+     */
+    //% subcategory="NeoPixel"
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_show_color
+    //% block="%strip|show color %rgb=neopixel_colors"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=85 blockGap=8
+    export function showColor(strip: neopixel.Strip, rgb: number): void {
+        strip.showColor(rgb);
+    }
+
+    /**
+     * Shows a rainbow pattern on all LEDs.
+     * @param startHue the start hue value for the rainbow, eg: 1
+     * @param endHue the end hue value for the rainbow, eg: 360
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_show_rainbow
+    //% block="%strip|show rainbow from %startHue|to %endHue"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% startHue.defl=1 endHue.defl=360
+    //% weight=85 blockGap=8
+    export function showRainbow(strip: neopixel.Strip, startHue: number = 1, endHue: number = 360): void {
+        strip.showRainbow(startHue, endHue);
+    }
+
+    /**
+     * Displays a vertical bar graph based on the `value` and `high` value.
+     * If `high` is 0, the chart gets adjusted automatically.
+     * @param value current value to plot
+     * @param high maximum value, eg: 255
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_show_bar_graph
+    //% block="%strip|show bar graph of %value|up to %high"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=84 blockGap=8
+    export function showBarGraph(strip: neopixel.Strip, value: number, high: number): void {
+        strip.showBarGraph(value, high);
+    }
+
+    // --- ADVANCED ("MORE...") NEOPIXEL SUB-GROUP BLOCKS ---
+
+    /**
+     * Set LED to a given color (range 0-255 for r, g, b).
+     * You need to call ``show`` to make the changes visible.
+     * @param pixeloffset position of the NeoPixel in the strip
+     * @param rgb RGB color of the LED
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_set_pixel_color
+    //% block="%strip|set pixel color at %pixeloffset|to %rgb=neopixel_colors"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=80 blockGap=8
+    export function setPixelColor(strip: neopixel.Strip, pixeloffset: number, rgb: number): void {
+        strip.setPixelColor(pixeloffset, rgb);
+    }
+
+    /**
+     * Send all the changes to the strip.
+     */
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_show
+    //% block="%strip|show" 
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=79 blockGap=8
+    export function show(strip: neopixel.Strip): void {
+        strip.show();
+    }
+
+    /**
+     * Turn off all LEDs.
+     * You need to call ``show`` to make the changes visible.
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_clear
+    //% block="%strip|clear"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=76 blockGap=8
+    export function clear(strip: neopixel.Strip): void {
+        strip.clear();
+    }
+
+    /**
+     * Set the brightness of the strip. This flag only applies to future operation.
+     * @param brightness a measure of LED brightness in 0-255. eg: 255
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_set_brightness
+    //% block="%strip|set brightness %brightness"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=59 blockGap=8
+    export function setBrightness(strip: neopixel.Strip, brightness: number): void {
+        strip.setBrightness(brightness);
+    }
+
+    /**
+     * Rotate LEDs forward.
+     * You need to call ``show`` to make the changes visible.
+     * @param offset number of pixels to rotate, eg: 1
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_rotate
+    //% block="%strip|rotate pixels by %offset"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% offset.defl=1
+    //% weight=39 blockGap=8
+    export function rotate(strip: neopixel.Strip, offset: number = 1): void {
+        strip.rotate(offset);
+    }
+
+    /**
+     * Shift LEDs forward and clear with a zero.
+     * You need to call ``show`` to make the changes visible.
+     * @param offset number of pixels to shift, eg: 1
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_shift
+    //% block="%strip|shift pixels by %offset"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% offset.defl=1
+    //% weight=40 blockGap=8
+    export function shift(strip: neopixel.Strip, offset: number = 1): void {
+        strip.shift(offset);
+    }
+
+    /**
+     * Create a new sub-range segment out of an existing NeoPixel strip.
+     * @param start offset position where the new range starts
+     * @param length total number of LEDs in the range
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_range
+    //% block="%strip|range from %start|with %length|leds"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=89 blockGap=8
+    //% blockSetVariable=range
+    export function range(strip: neopixel.Strip, start: number, length: number): neopixel.Strip {
+        return strip.range(start, length);
+    }
+
+    /**
+     * Set individual pixel white LED brightness for RGB+W NeoPixels.
+     * @param pixeloffset position of the LED in the strip
+     * @param white brightness of the white LED, eg: 255
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% subcategory="More"
+    //% blockId=jelly_neopixel_set_pixel_white
+    //% block="%strip|set pixel white LED at %pixeloffset|to %white"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=80 blockGap=8
+    export function setPixelWhiteLED(strip: neopixel.Strip, pixeloffset: number, white: number): void {
+        strip.setPixelWhiteLED(pixeloffset, white);
+    }
+
+    /**
+     * Gets the number of pixels declared on the strip.
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% subcategory="More"
+    //% blockId=jelly_neopixel_length
+    //% block="%strip|length"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=60 blockGap=8
+    export function length(strip: neopixel.Strip): number {
+        return strip.length();
+    }
+
+    /**
+     * Apply brightness to current colors using a quadratic easing.
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% subcategory="More"
+    //% blockId=jelly_neopixel_ease_brightness
+    //% block="%strip|ease brightness"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=58 blockGap=8
+    export function easeBrightness(strip: neopixel.Strip): void {
+        strip.easeBrightness();
+    }
+
+    /**
+     * Sets the number of pixels in a matrix shaped strip
+     * @param width number of pixels in a row
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% subcategory="More"
+    //% blockId=jelly_neopixel_set_matrix_width
+    //% block="%strip|set matrix width %width"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=5 blockGap=8
+    export function setMatrixWidth(strip: neopixel.Strip, width: number): void {
+        strip.setMatrixWidth(width);
+    }
+
+    /**
+     * Set LED to a given color (range 0-255 for r, g, b) in a matrix shaped strip
+     * You need to call ``show`` to make the changes visible.
+     * @param x horizontal position
+     * @param y vertical position
+     * @param rgb RGB color of the LED
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% subcategory="More"
+    //% blockId=jelly_neopixel_set_matrix_color
+    //% block="%strip|set matrix color at x %x|y %y|to %rgb=neopixel_colors"
+    //% strip.defl=strip
+    //% strip.shadow=variables_get
+    //% weight=4 blockGap=8
+    export function setMatrixColor(strip: neopixel.Strip, x: number, y: number, rgb: number): void {
+        strip.setMatrixColor(x, y, rgb);
+    }
+
+    // --- STATIC COLOR HELPER UTILITIES ---
+
+    /**
+     * Gets the RGB value of a known color
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% subcategory="More"
+    //% blockId=jelly_neopixel_colors
+    //% block="%color"
+    //% weight=2 blockGap=8
+    export function colors(color: NeoPixelColors): number {
+        return neopixel.colors(color);
+    }
+
+    /**
+     * Converts red, green, blue channels into an RGB color code value.
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% subcategory="More"
+    //% blockId=jelly_neopixel_rgb
+    //% block="red %red|green %green|blue %blue"
+    //% red.min=0 red.max=255 green.min=0 green.max=255 blue.min=0 blue.max=255
+    //% weight=1 blockGap=8
+    export function rgb(red: number, green: number, blue: number): number {
+        return neopixel.rgb(red, green, blue);
+    }
+
+    /**
+     * Converts hue, saturation, luminosity values into an RGB color code value.
+     */
+    //% group="NeoPixel"
+    //% subcategory="NeoPixel"
+    //% blockId=jelly_neopixel_hsl
+    //% block="hue %h|saturation %s|luminosity %l"
+    //% h.min=0 h.max=360 s.min=0 s.max=99 l.min=0 l.max=99
+    //% weight=63 blockGap=8
+    export function hsl(h: number, s: number, l: number): number {
+        return neopixel.hsl(h, s, l);
+    }
+
+    // --- OLED 128×64 DISPLAY (via tinkertanker/pxt-oled-ssd1306 v2.0.18) ---
+    // Hardware: plug the OLED into the I2C port (P19 = SCL, P20 = SDA)
+    //
+    // FRAMEBUFFER RENDERER
+    // The tinkertanker library writes pixels one I2C transaction at a time and
+    // cannot read back display RAM, so filled shapes rendered through it have
+    // page-boundary gaps. We maintain our own 1 KB in-memory framebuffer
+    // (128 cols × 8 pages, 1 byte per cell = 8 rows per byte) and flush it
+    // to the display in a single burst. This gives pixel-perfect fills for
+    // both rectangles and circles.
+    //
+    // Text, the progress bar, and the outline drawLine/drawCircle/drawRectangle
+    // calls still go through the tinkertanker library as before.
+    // After using framebuffer shapes, call oledFlush() to push them to screen.
+
+    const OLED_ADDR = 0x3C
+    const OLED_WIDTH = 128
+    const OLED_PAGES = 8   // 64px / 8px per page
+
+    // 1024-byte framebuffer: fb[page * 128 + col] holds 8 vertical pixels.
+    let oledFb: Buffer = pins.createBuffer(0)
+
+    function oledFbInit(): void {
+        if (oledFb.length === 0) {
+            oledFb = pins.createBuffer(OLED_WIDTH * OLED_PAGES)
+        }
+    }
+
+    function oledFbSetPixel(x: number, y: number): void {
+        if (x < 0 || x >= OLED_WIDTH || y < 0 || y >= 64) return
+        let page = y >> 3           // which page (y / 8)
+        let bit = y & 7             // which bit within the page byte (y % 8)
+        let idx = page * OLED_WIDTH + x
+        oledFb[idx] = oledFb[idx] | (1 << bit)
+    }
+
+    /** Flush the framebuffer to the OLED display. Call after drawing filled shapes. */
+    function oledFbFlush(): void {
+        // Set column address 0..127
+        let cmd = pins.createBuffer(2)
+        cmd[0] = 0x00
+        cmd[1] = 0x21        // SSD1306_SETCOLUMNADRESS
+        pins.i2cWriteBuffer(OLED_ADDR, cmd, false)
+        cmd[1] = 0x00
+        pins.i2cWriteBuffer(OLED_ADDR, cmd, false)
+        cmd[1] = 0x7F        // col 127
+        pins.i2cWriteBuffer(OLED_ADDR, cmd, false)
+        // Set page address 0..7
+        cmd[1] = 0x22        // SSD1306_SETPAGEADRESS
+        pins.i2cWriteBuffer(OLED_ADDR, cmd, false)
+        cmd[1] = 0x00
+        pins.i2cWriteBuffer(OLED_ADDR, cmd, false)
+        cmd[1] = 0x07        // page 7
+        pins.i2cWriteBuffer(OLED_ADDR, cmd, false)
+        // Stream framebuffer in 17-byte chunks (1 control byte + 16 data bytes)
+        let chunk = pins.createBuffer(17)
+        chunk[0] = 0x40      // data mode
+        let total = OLED_WIDTH * OLED_PAGES  // 1024
+        for (let i = 0; i < total; i += 16) {
+            for (let j = 0; j < 16; j++) {
+                chunk[j + 1] = (i + j < total) ? oledFb[i + j] : 0
+            }
+            pins.i2cWriteBuffer(OLED_ADDR, chunk, false)
+        }
+    }
+
+    /**
+     * Circle style — outline only, or filled solid.
+     */
+    export enum OledCircleStyle {
+        //% block="outline"
+        Outline = 0,
+        //% block="filled"
+        Filled = 1
+    }
+
+    /**
+     * Rectangle style — outline only, or filled solid.
+     */
+    export enum OledRectStyle {
+        //% block="outline"
+        Outline = 0,
+        //% block="filled"
+        Filled = 1
+    }
+
+    /**
+     * Set up the OLED display. Run this once in "on start".
+     * Plug the display into the I2C port: SDA to P20, SCL to P19.
+     */
+    //% group="OLED Display"
+    //% blockId=jelly_oled_init
+    //% block="set up OLED display on I2C (P19/P20)"
+    //% weight=310
+    export function oledInit(): void {
+        OLED.init(128, 64)
+        oledFbInit()
+        oledFb.fill(0)
+    }
+
+    /**
+     * Erase everything on the OLED screen.
+     */
+    //% group="OLED Display"
+    //% blockId=jelly_oled_clear
+    //% block="OLED clear screen"
+    //% weight=309
+    export function oledClear(): void {
+        OLED.clear()
+        oledFbInit()
+        oledFb.fill(0)
+    }
+
+    /**
+     * Display a line of text on the OLED screen.
+     * Each call goes on its own line — up to 8 lines fit on screen.
+     * @param text the text to display, eg: "Hello!"
+     */
+    //% group="OLED Display"
+    //% blockId=jelly_oled_display_string
+    //% block="OLED display %text"
+    //% weight=308
+    export function oledDisplay(text: string): void {
+        OLED.writeStringNewLine(text)
+    }
+
+    /**
+     * Display a number on the OLED screen on its own line.
+     * @param num the number to display, eg: 42
+     */
+    //% group="OLED Display"
+    //% blockId=jelly_oled_display_number
+    //% block="OLED display number %num"
+    //% weight=307
+    export function oledDisplayNumber(num: number): void {
+        OLED.writeNumNewLine(num)
+    }
+
+    /**
+     * Draw a progress bar that fills up to a percentage you choose.
+     * Call oledInit first. Calling this multiple times updates the bar.
+     * @param percent how full the bar is, from 0 to 100
+     */
+    //% group="OLED Display"
+    //% blockId=jelly_oled_bar
+    //% block="OLED progress bar %percent \\%"
+    //% percent.min=0 percent.max=100
+    //% weight=306
+    export function oledProgressBar(percent: number): void {
+        OLED.drawLoading(percent)
+    }
+
+    /**
+     * Draw a straight line between two points on the OLED screen.
+     * Screen is 128 pixels wide (x) and 64 pixels tall (y).
+     * @param x0 start x (0-127), eg: 0
+     * @param y0 start y (0-63), eg: 0
+     * @param x1 end x (0-127), eg: 50
+     * @param y1 end y (0-63), eg: 30
+     */
+    //% group="OLED Display"
+    //% blockId=jelly_oled_draw_line
+    //% block="OLED line from x %x0 y %y0 to x %x1 y %y1"
+    //% weight=305
+    export function oledLine(x0: number, y0: number, x1: number, y1: number): void {
+        OLED.drawLine(x0, y0, x1, y1)
+    }
+
+    /**
+     * Draw a rectangle on the OLED screen. Pick outline or filled.
+     * Filled rectangles are rendered through the framebuffer for a clean solid fill.
+     * Call oledClear before drawing and shapes will appear immediately.
+     * @param style outline or filled
+     * @param x0 top-left x (0-127), eg: 10
+     * @param y0 top-left y (0-63), eg: 10
+     * @param x1 bottom-right x (0-127), eg: 60
+     * @param y1 bottom-right y (0-63), eg: 40
+     */
+    //% group="OLED Display"
+    //% blockId=jelly_oled_draw_rect
+    //% block="OLED %style rectangle from x %x0 y %y0 to x %x1 y %y1"
+    //% weight=304
+    export function oledRect(style: OledRectStyle, x0: number, y0: number, x1: number, y1: number): void {
+        if (style === OledRectStyle.Filled) {
+            oledFbInit()
+            let top = Math.min(y0, y1)
+            let bottom = Math.max(y0, y1)
+            let left = Math.min(x0, x1)
+            let right = Math.max(x0, x1)
+            // Clamp to screen
+            top = Math.max(0, top)
+            bottom = Math.min(63, bottom)
+            left = Math.max(0, left)
+            right = Math.min(127, right)
+            // Fill every pixel in the region into the framebuffer,
+            // working page by page for efficiency.
+            let pageTop = top >> 3
+            let pageBot = bottom >> 3
+            for (let page = pageTop; page <= pageBot; page++) {
+                // Build the byte mask for this page:
+                // which of the 8 row-bits fall inside [top, bottom]?
+                let rowStart = page * 8
+                let rowEnd = rowStart + 7
+                let bitStart = Math.max(top, rowStart) - rowStart   // 0-7
+                let bitEnd = Math.min(bottom, rowEnd) - rowStart     // 0-7
+                // Set bits bitStart..bitEnd inclusive
+                let mask = 0
+                for (let b = bitStart; b <= bitEnd; b++) {
+                    mask = mask | (1 << b)
+                }
+                // Write mask across every column in the row
+                let base = page * OLED_WIDTH
+                for (let col = left; col <= right; col++) {
+                    oledFb[base + col] = oledFb[base + col] | mask
+                }
+            }
+            oledFbFlush()
+        } else {
+            OLED.drawRectangle(x0, y0, x1, y1)
+        }
+    }
+
+    /**
+     * Draw a circle on the OLED screen. Pick outline or filled.
+     * Filled circles are rendered through the framebuffer for a clean solid fill
+     * at any radius.
+     * @param style outline or filled
+     * @param x centre x position (0-127), eg: 64
+     * @param y centre y position (0-63), eg: 32
+     * @param r radius in pixels, eg: 15
+     */
+    //% group="OLED Display"
+    //% blockId=jelly_oled_draw_circle
+    //% block="OLED %style circle at x %x y %y radius %r"
+    //% x.defl=64 y.defl=32 r.defl=15
+    //% weight=303
+    export function oledCircle(style: OledCircleStyle, x: number, y: number, r: number): void {
+        if (style === OledCircleStyle.Filled) {
+            oledFbInit()
+            // Midpoint circle algorithm — for each column dx, compute the
+            // vertical span and fill it in the framebuffer page by page.
+            for (let dx = -r; dx <= r; dx++) {
+                let h = Math.floor(Math.sqrt(r * r - dx * dx))
+                let colX = x + dx
+                let yTop = y - h
+                let yBot = y + h
+                if (colX < 0 || colX >= OLED_WIDTH) continue
+                yTop = Math.max(0, yTop)
+                yBot = Math.min(63, yBot)
+                // Fill this column from yTop to yBot using page-aware masking
+                let pageTop = yTop >> 3
+                let pageBot = yBot >> 3
+                for (let page = pageTop; page <= pageBot; page++) {
+                    let rowStart = page * 8
+                    let bitStart = Math.max(yTop, rowStart) - rowStart
+                    let bitEnd = Math.min(yBot, rowStart + 7) - rowStart
+                    let mask = 0
+                    for (let b = bitStart; b <= bitEnd; b++) {
+                        mask = mask | (1 << b)
+                    }
+                    let idx = page * OLED_WIDTH + colX
+                    oledFb[idx] = oledFb[idx] | mask
+                }
+            }
+            oledFbFlush()
+        } else {
+            OLED.drawCircle(x, y, r)
+        }
+    }
+
 }
 
 // --- SILENT SIDEBAR OVERRIDE LAYER ---
@@ -1313,3 +1649,6 @@ namespace neopixel { }
 
 //% deprecated=true
 namespace servos { }
+
+//% deprecated=true
+namespace OLED { }

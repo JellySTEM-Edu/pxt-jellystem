@@ -83,3 +83,23 @@ Changes by JellySTEM:
 - Eenamed enums to avoid collision with existing DistanceUnit
 - Prefixed private helpers
 - Added "jelly_" namespace prefix to blockId
+
+---
+
+Project name:
+tinkertanker/pxt-oled-ssd1306
+
+Repository:
+[github.com/tinkertanker/pxt-oled-ssd1306](https://github.com/tinkertanker/pxt-oled-ssd1306)
+
+License:
+MIT License
+
+Original copyright:
+Copyright (c) Tinkertanker
+
+Changes by JellySTEM:
+- Linked as a versioned dependency (v2.0.18)
+- Re-exposed its blocks under the unified JellySTEM "Display" group
+  via wrapper functions. 
+- The upstream OLED drawer is suppressed.
