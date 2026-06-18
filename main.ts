@@ -16,6 +16,7 @@
 */
 
 //% weight=100 color="#246C64" icon="\uf1b2" block="JellySTEM"
+//% subcategories='["mShield", "Distance Sensors", "NeoPixel", "OLED Display", "Servo"]'
 namespace jellystem {
     export enum MotorsDirection {
         //%block="clockwise"
@@ -146,18 +147,15 @@ namespace jellystem {
     let motor1Speed = 0
     let motor2Speed = 0
 
-    // Minimum non-zero speed sent to motors. Values below this cause PWM whining without movement.
+    // Minimum non-zero speed sent to motors — values below this cause PWM whining without movement
     const MIN_MOTOR_SPEED = 40
 
-    // For Ir receiver
     let irVal = 0
 
-    //The I2C speed is 100Khz, and the slave address is 0x29
+    // I2C address of the mShield board
     let i2cAddr: number = 0x29;
 
-    /**
-     * Private helper to write a command register and a value byte over I2C.
-     */
+    // Write a register address + value byte to the mShield over I2C
     function writeReg2Bytes(reg: number, value: number): void {
         let buf = pins.createBuffer(2);
         buf[0] = reg;
@@ -165,9 +163,7 @@ namespace jellystem {
         pins.i2cWriteBuffer(i2cAddr, buf);
     }
 
-    /**
-     * Private helper to write a single register/command byte over I2C.
-     */
+    // Write a single command byte to the mShield over I2C
     function writeReg1Byte(reg: number): void {
         let buf = pins.createBuffer(1);
         buf[0] = reg;
@@ -175,11 +171,12 @@ namespace jellystem {
     }
 
     /**
-    * Set the speed and direction of the motors
-    * @param motor - The motors of mShield.
-    * @param direction - The motor goes clockwise or counterclockwise.
-    * @param speed - The speed at which the motor. eg: 0--100
-    */
+     * Set the speed and direction of a motor.
+     * @param motor which motor(s) to control
+     * @param direction clockwise or counterclockwise
+     * @param speed speed from 0 to 100
+     */
+    //% subcategory="mShield"
     //% group="Motors"
     //% block="set %motor %direction speed %speed\\%"
     //% speed.min=0 speed.max=100
@@ -187,28 +184,25 @@ namespace jellystem {
     //% weight=380
     export function setMotorsDirectionSpeed(motor: Motors, direction: MotorsDirection, speed: number): void {
         speed = Math.max(0, Math.min(100, speed));
-
         if (motor == Motors.Motor1 || motor == Motors.AllMotors) {
-            // SYNC STATE: Store as negative if moving counterclockwise
-            motor1Speed = (direction == MotorsDirection.CC) ? speed : -speed;
-
+            motor1Speed = (direction == MotorsDirection.CC) ? speed : -speed; // SYNC STATE
             let value = (direction == MotorsDirection.CC) ? speed : speed + 101;
             writeReg2Bytes(0x09, value);
         }
         if (motor == Motors.Motor2 || motor == Motors.AllMotors) {
-            // SYNC STATE: Store as negative if moving counterclockwise
-            motor2Speed = (direction == MotorsDirection.CC) ? speed : -speed;
-
+            motor2Speed = (direction == MotorsDirection.CC) ? speed : -speed; // SYNC STATE
             let value = (direction == MotorsDirection.CC) ? speed : speed + 101;
             writeReg2Bytes(0x0a, value);
         }
     }
 
     /**
-     * Set the speed and direction of the motor.
-     * @param m1Speed - Set the speed and direction of the left motor.
-     * @param m2Speed - Set the speed and direction of the right motor.
+     * Set both motors at once using signed speeds (-100 to 100).
+     * Positive = clockwise, negative = counterclockwise.
+     * @param m1Speed motor 1 speed, eg: 80
+     * @param m2Speed motor 2 speed, eg: 80
      */
+    //% subcategory="mShield"
     //% group="Motors"
     //% block="set motor1 speed %m1Speed\\% motor2 speed %m2Speed\\%"
     //% m1Speed.min=-100 m1Speed.max=100
@@ -217,70 +211,49 @@ namespace jellystem {
     export function setMotorsSpeed(m1Speed: number, m2Speed: number): void {
         m1Speed = Math.max(-100, Math.min(100, m1Speed));
         m2Speed = Math.max(-100, Math.min(100, m2Speed));
-
-        if (m1Speed > 0) {
-            motor1Speed = m1Speed; // SYNC STATE
-            writeReg2Bytes(0x09, motor1Speed);
-        } else if (m1Speed < 0) {
-            motor1Speed = m1Speed; // SYNC STATE (keeps the negative value)
-            writeReg2Bytes(0x09, Math.abs(m1Speed) + 101);
-        } else {
-            motor1Speed = 0; // SYNC STATE
-            writeReg2Bytes(0x09, 0); // Explicit stop — register value 0, not 101
-        }
-
-        if (m2Speed > 0) {
-            motor2Speed = m2Speed; // SYNC STATE
-            writeReg2Bytes(0x0a, motor2Speed);
-        } else if (m2Speed < 0) {
-            motor2Speed = m2Speed; // SYNC STATE (keeps the negative value)
-            writeReg2Bytes(0x0a, Math.abs(m2Speed) + 101);
-        } else {
-            motor2Speed = 0; // SYNC STATE
-            writeReg2Bytes(0x0a, 0); // Explicit stop — register value 0, not 101
-        }
+        if (m1Speed > 0) { motor1Speed = m1Speed; writeReg2Bytes(0x09, motor1Speed); }             // SYNC STATE
+        else if (m1Speed < 0) { motor1Speed = m1Speed; writeReg2Bytes(0x09, Math.abs(m1Speed) + 101); } // SYNC STATE
+        else { motor1Speed = 0; writeReg2Bytes(0x09, 0); }                                          // stop: register 0, not 101
+        if (m2Speed > 0) { motor2Speed = m2Speed; writeReg2Bytes(0x0a, motor2Speed); }             // SYNC STATE
+        else if (m2Speed < 0) { motor2Speed = m2Speed; writeReg2Bytes(0x0a, Math.abs(m2Speed) + 101); } // SYNC STATE
+        else { motor2Speed = 0; writeReg2Bytes(0x0a, 0); }                                          // stop: register 0, not 101
     }
 
-    /** * Motors stop.
-     * @param motor - The motors of mShield.
+    /**
+     * Stop a motor immediately (coast to stop, no braking).
+     * @param motor which motor(s) to stop
      */
+    //% subcategory="mShield"
     //% group="Motors"
     //% weight=378
     //% block="stop %motor"
     export function wheelStop(motor: Motors): void {
-        if (motor == Motors.Motor1 || motor == Motors.AllMotors) {
-            motor1Speed = 0; // SYNC STATE
-            writeReg2Bytes(0x09, 0);
-        }
-        if (motor == Motors.Motor2 || motor == Motors.AllMotors) {
-            motor2Speed = 0; // SYNC STATE
-            writeReg2Bytes(0x0a, 0);
-        }
+        if (motor == Motors.Motor1 || motor == Motors.AllMotors) { motor1Speed = 0; writeReg2Bytes(0x09, 0); }
+        if (motor == Motors.Motor2 || motor == Motors.AllMotors) { motor2Speed = 0; writeReg2Bytes(0x0a, 0); }
     }
 
-    /** * Motors brake.
-     * @param motor - The motors of mShield.
+    /**
+     * Brake or coast a motor.
+     * Brake holds the motor shaft in place; coast lets it spin freely.
+     * @param motor which motor(s) to control
+     * @param mode brake or coast
      */
+    //% subcategory="mShield"
     //% group="Motors"
     //% weight=377
     //% block="%motor %mode"
     export function wheelBrake(motor: Motors, mode: MotorMode): void {
-        if (motor == Motors.Motor1 || motor == Motors.AllMotors) {
-            motor1Speed = 0;
-            writeReg2Bytes(0x19, mode);
-        }
-        if (motor == Motors.Motor2 || motor == Motors.AllMotors) {
-            motor2Speed = 0;
-            writeReg2Bytes(0x1a, mode);
-        }
+        if (motor == Motors.Motor1 || motor == Motors.AllMotors) { motor1Speed = 0; writeReg2Bytes(0x19, mode); }
+        if (motor == Motors.Motor2 || motor == Motors.AllMotors) { motor2Speed = 0; writeReg2Bytes(0x1a, mode); }
     }
 
-    /** * Motors speed calibration.
-     * When the speed of the left and right motors of the mShield trolley is not consistent,
-     * this function can adjust the speed of the motor and save it permanently.
-     * @param offset1 - Motor1 offset. eg: -10--0
-     * @param offset2 - Motor2 offset. eg: -10--0
+    /**
+     * Fine-tune left/right motor balance when the robot drifts.
+     * Adjusts the mShield speed offset registers permanently.
+     * @param offset1 Motor 1 trim, eg: -3
+     * @param offset2 Motor 2 trim, eg: -3
      */
+    //% subcategory="mShield"
     //% group="Motors"
     //% weight=376
     //% block="trim motor speed: M1 %offset1 M2 %offset2"
@@ -290,97 +263,77 @@ namespace jellystem {
     export function motorsAdjustment(offset1: number, offset2: number): void {
         offset1 = pins.map(offset1, -10, 0, 10, 0);
         offset2 = pins.map(offset2, -10, 0, 10, 0);
-
         writeReg2Bytes(0x07, offset1);
         basic.pause(10);
-
         writeReg2Bytes(0x08, offset2);
         basic.pause(10);
     }
 
     /**
-         * Smoothly accelerates or decelerates a motor to a target speed over a set duration.
-         * @param motor choose motor 1 or motor 2
-         * @param targetSpeed desired speed from -100 to 100, eg: 100
-         * @param duration time to reach target speed in milliseconds, eg: 1000
-         */
+     * Smoothly ramp a motor from its current speed to a target speed.
+     * Runs in the background so it does not pause the rest of your program.
+     * Avoids the motor dead zone where low PWM causes whining without movement.
+     * @param motor which motor to ramp
+     * @param targetSpeed target speed from -100 to 100, eg: 100
+     * @param duration how long the ramp takes in milliseconds, eg: 1000
+     */
+    //% subcategory="mShield"
     //% group="Motors"
     //% blockId=jellystem_motor_accelerate
-    //% block="ramp %motor to %targetSpeed\\% over %duration ms" 
+    //% block="ramp %motor to %targetSpeed\\% over %duration ms"
     //% targetSpeed.min=-100 targetSpeed.max=100
     //% duration.shadow=timePicker
     //% weight=85
     export function accelerateMotor(motor: Motors, targetSpeed: number, duration: number): void {
-        // Enforce boundary safety limits using MakeCode supported Math features
         targetSpeed = Math.max(-100, Math.min(100, targetSpeed));
-
-        // Prevent whining: snap any non-zero target below the minimum to the minimum.
-        // Speed 0 is always allowed for a clean stop.
+        // Snap any non-zero target below MIN up to MIN to stay out of the dead zone
         if (Math.abs(targetSpeed) > 0 && Math.abs(targetSpeed) < MIN_MOTOR_SPEED) {
             targetSpeed = targetSpeed > 0 ? MIN_MOTOR_SPEED : -MIN_MOTOR_SPEED;
         }
-
-        // Execute in background so student execution tracks smoothly without stalling basic operations
         control.inBackground(function () {
-            let steps = 20; // Total granular adjustments
-            let stepDelay = Math.max(10, duration / steps); // Stagger steps out safely (min 10ms)
-
+            let steps = 20;         // granularity of the ramp
+            let stepDelay = Math.max(10, duration / steps); // minimum 10 ms per step
             let startSpeedM1 = motor1Speed;
             let startSpeedM2 = motor2Speed;
-
-            // If the current speed is below the minimum (including 0), snap the interpolation
-            // start point up to MIN so no intermediate step drives into the whining dead zone.
-            // Only applied when accelerating toward a non-zero target.
+            // If already in the dead zone, snap the start point to MIN so no
+            // intermediate step drives through the whining range
             let effectiveStartM1 = (targetSpeed !== 0 && Math.abs(startSpeedM1) < MIN_MOTOR_SPEED)
-                ? (targetSpeed > 0 ? MIN_MOTOR_SPEED : -MIN_MOTOR_SPEED)
-                : startSpeedM1;
+                ? (targetSpeed > 0 ? MIN_MOTOR_SPEED : -MIN_MOTOR_SPEED) : startSpeedM1;
             let effectiveStartM2 = (targetSpeed !== 0 && Math.abs(startSpeedM2) < MIN_MOTOR_SPEED)
-                ? (targetSpeed > 0 ? MIN_MOTOR_SPEED : -MIN_MOTOR_SPEED)
-                : startSpeedM2;
-
+                ? (targetSpeed > 0 ? MIN_MOTOR_SPEED : -MIN_MOTOR_SPEED) : startSpeedM2;
             for (let i = 1; i <= steps; i++) {
                 let progress = i / steps;
-
                 if (motor == Motors.Motor1 || motor == Motors.AllMotors) {
                     motor1Speed = Math.round(effectiveStartM1 + (targetSpeed - effectiveStartM1) * progress);
-                    // Safety net: snap any value that still lands in the dead zone.
-                    // When decelerating to 0, snap to 0 cleanly; otherwise snap up to MIN.
                     let m1Write = motor1Speed;
-                    if (Math.abs(m1Write) > 0 && Math.abs(m1Write) < MIN_MOTOR_SPEED) {
+                    if (Math.abs(m1Write) > 0 && Math.abs(m1Write) < MIN_MOTOR_SPEED)
                         m1Write = (targetSpeed === 0) ? 0 : (m1Write > 0 ? MIN_MOTOR_SPEED : -MIN_MOTOR_SPEED);
-                    }
-                    // Encode signed speed into mShield protocol layout (Positive vs Negative mapping)
-                    let m1Value = (m1Write >= 0) ? m1Write : (Math.abs(m1Write) + 101);
-                    writeReg2Bytes(0x09, m1Value);
+                    writeReg2Bytes(0x09, (m1Write >= 0) ? m1Write : (Math.abs(m1Write) + 101));
                 }
                 if (motor == Motors.Motor2 || motor == Motors.AllMotors) {
                     motor2Speed = Math.round(effectiveStartM2 + (targetSpeed - effectiveStartM2) * progress);
                     let m2Write = motor2Speed;
-                    if (Math.abs(m2Write) > 0 && Math.abs(m2Write) < MIN_MOTOR_SPEED) {
+                    if (Math.abs(m2Write) > 0 && Math.abs(m2Write) < MIN_MOTOR_SPEED)
                         m2Write = (targetSpeed === 0) ? 0 : (m2Write > 0 ? MIN_MOTOR_SPEED : -MIN_MOTOR_SPEED);
-                    }
-                    // Encode signed speed into mShield protocol layout (Positive vs Negative mapping)
-                    let m2Value = (m2Write >= 0) ? m2Write : (Math.abs(m2Write) + 101);
-                    writeReg2Bytes(0x0a, m2Value);
+                    writeReg2Bytes(0x0a, (m2Write >= 0) ? m2Write : (Math.abs(m2Write) + 101));
                 }
-
                 basic.pause(stepDelay);
             }
         });
     }
 
     /**
-    * Set xxx% LEDs.
-    * @param led - Choose which leds to use.
-    * @param onOff - Turn LED on or off.
-    */
+     * Turn one or all mShield indicator LEDs on or off.
+     * @param led which LED brightness level to control
+     * @param onOff true = on, false = off
+     */
+    //% subcategory="mShield"
     //% group="LEDs"
     //% block="turn %led %onOff"
     //% weight=370
     //% onOff.shadow=toggleOnOff
     export function setLed(led: Leds, onOff: boolean) {
         let stateVal = onOff ? 1 : 0;
-
         if (led == Leds.LED20 || led == Leds.AllLED) writeReg2Bytes(0x0b, stateVal);
         if (led == Leds.LED40 || led == Leds.AllLED) writeReg2Bytes(0x0c, stateVal);
         if (led == Leds.LED60 || led == Leds.AllLED) writeReg2Bytes(0x0d, stateVal);
@@ -388,33 +341,34 @@ namespace jellystem {
     }
 
     //% shim=mShieldInfrared::irCode
-    function irCode(): number {
-        return 0;
-    }
+    function irCode(): number { return 0; }
 
     /**
-      * Run code when a button is pressed on the IR remote.
-      */
+     * Run code whenever an IR remote button is pressed.
+     * Listens on pin P12 in the background.
+     * @param handler code to run on each button press
+     */
+    //% subcategory="mShield"
     //% group="Infrared sensor"
     //% weight=360
     //% block="on IR remote signal"
     export function irCallBack(handler: () => void) {
         pins.setPull(DigitalPin.P12, PinPullMode.PullUp)
-
         control.inBackground(() => {
             while (true) {
                 irVal = irCode()
-                if (irVal > 0xff) {
-                    handler()
-                }
+                if (irVal > 0xff) handler()
                 basic.pause(20)
             }
         })
     }
 
     /**
-     * Select the value of the infrared key that you want to be pressed.
+     * Check if a specific IR remote button was the last one pressed.
+     * Use inside an "on IR remote signal" block.
+     * @param irButton the button to check
      */
+    //% subcategory="mShield"
     //% group="Infrared sensor"
     //% irButton.fieldEditor="gridpicker"
     //% irButton.fieldOptions.columns=3
@@ -426,34 +380,32 @@ namespace jellystem {
     }
 
     /**
-     * Read IR value.
-     * The correct infrared key value can only be read
-     * when the infrared key value is not equal to 0 by logical judgment.
-     * Return the key value of the infrared remote control, only the instruction code.
+     * Read the raw code of the last IR remote button pressed.
+     * Returns 0 if no button has been pressed yet.
      */
+    //% subcategory="mShield"
     //% group="Infrared sensor"
     //% block="IR value"
     //% weight=358
-    export function irValue(): number {
-        return irVal & 0x00ff;
-    }
+    export function irValue(): number { return irVal & 0x00ff; }
 
     /**
-     * Set the port type of S1-S4.
-     * @param type - PWM or servo.
+     * Set whether the S1–S4 ports behave as PWM outputs or servo outputs.
+     * Call this once in "on start" before using any S1–S4 block.
+     * @param type PWM or servo
      */
+    //% subcategory="mShield"
     //% group="PWM port"
     //% weight=350
     //% block="set S1–S4 type to %type"
-    export function setS1ToS4Type(type: S1ToS4Type): void {
-        writeReg2Bytes(0x0f, type);
-    }
+    export function setS1ToS4Type(type: S1ToS4Type): void { writeReg2Bytes(0x0f, type); }
 
     /**
-     * mShield S1--S4 ports output PWM signals.
-     * @param index - S1--S4 ports.
-     * @param pulseWidth - Pulse width.
+     * Set the PWM pulse width on an S1–S4 port (0–200).
+     * @param index which S port(s) to control
+     * @param pulseWidth pulse width value, eg: 100
      */
+    //% subcategory="mShield"
     //% group="PWM port"
     //% weight=349
     //% block="set %index PWM to %pulseWidth"
@@ -461,7 +413,6 @@ namespace jellystem {
     //% pulseWidth.defl=0
     export function extendPwmControl(index: PwmAndServoIndex, pulseWidth: number): void {
         pulseWidth = Math.max(0, Math.min(200, pulseWidth));
-
         if (index == PwmAndServoIndex.S1 || index == PwmAndServoIndex.All) writeReg2Bytes(0x10, pulseWidth);
         if (index == PwmAndServoIndex.S2 || index == PwmAndServoIndex.All) writeReg2Bytes(0x11, pulseWidth);
         if (index == PwmAndServoIndex.S3 || index == PwmAndServoIndex.All) writeReg2Bytes(0x12, pulseWidth);
@@ -469,29 +420,22 @@ namespace jellystem {
     }
 
     /**
-     * Servo control module, used for 90, 180, 270 degrees servo.
-     * When the S1--S4 ports of mShield are connected to the servo, this function can control the servo.
-     * @param servoType - Servo type.
-     * @param index - Servo interface on mShield.
-     * @param angle - The Angle of rotation of the servo.
+     * Set the angle of a positional servo plugged into an S1–S4 port.
+     * Pick the servo type (90°, 180°, or 270°) to match your hardware.
+     * @param index which S port the servo is on
+     * @param servoType the rotation range of your servo
+     * @param angle target angle in degrees, eg: 90
      */
+    //% subcategory="mShield"
     //% group="PWM port"
     //% weight=348
     //% block="set %index %servoType servo to %angle°"
     //% angle.defl=0
     export function extendServoControl(index: PwmAndServoIndex, servoType: ServoType, angle: number): void {
         let angleMap: number = 0;
-        if (servoType == ServoType.Servo90) {
-            angle = Math.max(0, Math.min(90, angle));
-            angleMap = pins.map(angle, 0, 90, 50, 250);
-        } else if (servoType == ServoType.Servo180) {
-            angle = Math.max(0, Math.min(180, angle));
-            angleMap = pins.map(angle, 0, 180, 50, 250);
-        } else if (servoType == ServoType.Servo270) {
-            angle = Math.max(0, Math.min(270, angle));
-            angleMap = pins.map(angle, 0, 270, 50, 250);
-        }
-
+        if (servoType == ServoType.Servo90) { angle = Math.max(0, Math.min(90, angle)); angleMap = pins.map(angle, 0, 90, 50, 250); }
+        else if (servoType == ServoType.Servo180) { angle = Math.max(0, Math.min(180, angle)); angleMap = pins.map(angle, 0, 180, 50, 250); }
+        else if (servoType == ServoType.Servo270) { angle = Math.max(0, Math.min(270, angle)); angleMap = pins.map(angle, 0, 270, 50, 250); }
         if (index == PwmAndServoIndex.S1 || index == PwmAndServoIndex.All) writeReg2Bytes(0x14, angleMap);
         if (index == PwmAndServoIndex.S2 || index == PwmAndServoIndex.All) writeReg2Bytes(0x15, angleMap);
         if (index == PwmAndServoIndex.S3 || index == PwmAndServoIndex.All) writeReg2Bytes(0x16, angleMap);
@@ -499,175 +443,68 @@ namespace jellystem {
     }
 
     /**
-     * The steering gear rotates continuously, and is used for the steering gear of 360 degrees rotation.
-     * @param index - Servo interface on mShield. 
-     * @param speed - The speed at which the servo rotates.
+     * Run a continuous (360°) servo at a set speed on an S1–S4 port.
+     * -100 = full reverse, 0 = stop, 100 = full forward.
+     * @param index which S port the servo is on
+     * @param speed speed from -100 to 100, eg: 50
      */
+    //% subcategory="mShield"
     //% group="PWM port"
     //% weight=347
     //% block="set %index 360° servo speed to %speed\\%"
     //% speed.min=-100 speed.max=100
     //% speed.defl=0
     export function continuousServoControl(index: PwmAndServoIndex, speed: number): void {
+        // Map -100..100 to 0..180 angle range for the servo180 protocol
         speed = pins.map(speed, -100, 100, 0, 180)
         extendServoControl(index, ServoType.Servo180, speed)
     }
 
-    // --- SERVO (via dependency: microsoft/pxt-common-packages/libs/servo) ---
-
     /**
-     * Pins that support servo output.
+     * Read the battery level as a percentage (0–100).
+     * Tell it what battery type you are using so it can calculate correctly.
+     * @param batType battery chemistry and cell count
      */
-    export enum ServoPin {
-        //% block="P0"
-        P0 = 0,
-        //% block="P1"
-        P1 = 1,
-        //% block="P2"
-        P2 = 2
-    }
-
-    function getServo(pin: ServoPin): servos.Servo {
-        if (pin === ServoPin.P1) return servos.P1;
-        if (pin === ServoPin.P2) return servos.P2;
-        return servos.P0;
-    }
-
-    /**
-     * Turn a servo to an angle you choose.
-     * 0° is all the way left, 90° is the middle, 180° is all the way right.
-     * @param pin the pin the servo is plugged into
-     * @param degrees the angle to turn to, eg: 90
-     */
-    //% group="Servo"
-    //% blockId=jelly_servo_set_angle
-    //% block="set servo %pin to %degrees °"
-    //% degrees.min=0 degrees.max=180 degrees.defl=90
-    //% weight=335
-    export function servoSetAngle(pin: ServoPin, degrees: number): void {
-        getServo(pin).setAngle(degrees);
-    }
-
-    /**
-     * Run a continuous (360°) servo at a speed you choose.
-     * Positive = forward, negative = backward, 0 = stop.
-     * @param pin the pin the servo is plugged into
-     * @param speed the speed from -100% to 100%, eg: 50
-     */
-    //% group="Servo"
-    //% blockId=jelly_servo_run
-    //% block="continuous servo %pin run at %speed \\%"
-    //% speed.min=-100 speed.max=100 speed.defl=50
-    //% weight=334
-    export function servoRun(pin: ServoPin, speed: number): void {
-        getServo(pin).run(speed);
-    }
-
-    /**
-     * Stop a servo. It will stay where it is and won't hold its position.
-     * @param pin the pin the servo is plugged into
-     */
-    //% group="Servo"
-    //% blockId=jelly_servo_stop
-    //% block="stop servo %pin"
-    //% weight=333
-    export function servoStop(pin: ServoPin): void {
-        getServo(pin).stop();
-    }
-
-    /**
-     * Set the servo pulse width directly in microseconds.
-     * Useful for fine-tuning or non-standard servos.
-     * 1000 μs = far left, 1500 μs = center, 2000 μs = far right.
-     * @param pin the pin the servo is plugged into
-     * @param micros the pulse width in microseconds, eg: 1500
-     */
-    //% group="Servo"
-    //% blockId=jelly_servo_set_pulse
-    //% block="set servo %pin pulse to %micros μs"
-    //% micros.min=500 micros.max=2500 micros.defl=1500
-    //% weight=332
-    export function servoSetPulse(pin: ServoPin, micros: number): void {
-        getServo(pin).setPulse(micros);
-    }
-
-    /**
-     * Set the min and max angle limits for a servo.
-     * Useful if your servo doesn't go all the way to 0° or 180°.
-     * @param pin the pin the servo is plugged into
-     * @param minAngle the minimum angle, eg: 0
-     * @param maxAngle the maximum angle, eg: 180
-     */
-    //% group="Servo"
-    //% blockId=jelly_servo_set_range
-    //% block="set servo %pin range %minAngle to %maxAngle °"
-    //% minAngle.min=0 minAngle.max=90 minAngle.defl=0
-    //% maxAngle.min=90 maxAngle.max=180 maxAngle.defl=180
-    //% weight=331
-    export function servoSetRange(pin: ServoPin, minAngle: number, maxAngle: number): void {
-        getServo(pin).setRange(minAngle, maxAngle);
-    }
-
-    /**
-     * Set whether a continuous servo stops when it reaches the middle position (90°).
-     * Turn this on if you want the servo to stop on its own when it hits the center.
-     * @param pin the pin the servo is plugged into
-     * @param enabled true to stop at neutral, false to keep going
-     */
-    //% group="Servo"
-    //% blockId=jelly_servo_stop_on_neutral
-    //% block="set servo %pin stop at middle %enabled"
-    //% enabled.shadow=toggleOnOff
-    //% weight=330
-    export function servoSetStopOnNeutral(pin: ServoPin, enabled: boolean): void {
-        getServo(pin).setStopOnNeutral(enabled);
-    }
-
-    /**
-     * Sets the battery type and returns the battery level.
-     * @param batType - Type of battery. 
-     * Return 0--100
-     */
+    //% subcategory="mShield"
     //% group="Battery"
     //% weight=340
     //% block="battery level with %batType"
     export function batteryLevel(batType: BatteryType): number {
         writeReg1Byte(batType);
-
         let batLevel = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false);
         return Math.min(100, batLevel);
     }
 
     /**
-     * Read the battery voltage value.
-     * Return 0--25.5
+     * Read the raw battery voltage in volts (0–25.5 V).
      */
+    //% subcategory="mShield"
     //% group="Battery"
     //% weight=339
     //% block="battery voltage"
     export function batteryVoltage(): number {
         writeReg1Byte(0x1B);
-
         let batVolt = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false);
         return batVolt / 10;
     }
 
     /**
-     * Read the firmware version of the chip on the mShield.
-     * Returns a string. eg："Vx"
+     * Read the firmware version string from the mShield chip.
+     * Returns a string like "V3".
      */
+    //% subcategory="mShield"
     //% group="Others"
     //% weight=330
     //% block="version number"
     export function readVersions(): string {
         writeReg1Byte(0x00);
-
         let mCarVersions = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false);
         return `V${mCarVersions}`;
     }
 
     // =========================================================================
     // --- IR DISTANCE SENSOR: SHARP GP2Y0A41SK0F ---
+    // Analog triangulation sensor. Range: 4–40 cm. Connect signal to any analog pin.
     // =========================================================================
 
     export enum IrDistanceUnit {
@@ -688,21 +525,24 @@ namespace jellystem {
         Farther = 1
     }
 
+    // Internal: convert raw ADC value to distance in the requested unit.
+    // Formula d = 3300/(raw+15) is calibrated for the GP2Y0A41SK0F on 3.3 V / 10-bit ADC.
+    // Returns 0 for out-of-range readings (blind spot or nothing detected).
     function internalReadSharpIR(pin: AnalogPin, unit: IrDistanceUnit): number {
         let raw = pins.analogReadPin(pin);
         if (unit === IrDistanceUnit.Raw) return raw;
-        if (raw <= 10) return 0;
+        if (raw <= 10) return 0;  // noise floor — treat as nothing detected
         let cm = Math.round(3300 / (raw + 15));
-        if (cm < 4 || cm > 40) return 0;
+        if (cm < 4 || cm > 40) return 0;  // outside sensor's usable range
         if (unit === IrDistanceUnit.Mm) return cm * 10;
         if (unit === IrDistanceUnit.Inch) return Math.round(cm / 2.54);
         return cm;
     }
 
     /**
-     * Set up the Sharp IR distance sensor on a pin.
-     * Run this once in "on start". Warms up the sensor so the first reading is stable.
-     * @param pin the pin the sensor is plugged into, eg: AnalogPin.P0
+     * Set up the Sharp GP2Y0A41SK0F IR distance sensor. Run once in "on start".
+     * Performs 5 warmup reads so the first distance reading is stable.
+     * @param pin the analog pin the sensor signal wire is connected to
      */
     //% subcategory="Distance Sensors"
     //% group="IR Distance"
@@ -710,17 +550,14 @@ namespace jellystem {
     //% block="set up IR sensor at %pin"
     //% weight=396
     export function setUpIrSensor(pin: AnalogPin): void {
-        for (let i = 0; i < 5; i++) {
-            pins.analogReadPin(pin);
-            basic.pause(10);
-        }
+        for (let i = 0; i < 5; i++) { pins.analogReadPin(pin); basic.pause(10); }
     }
 
     /**
-     * Reads how far away the nearest object is using the Sharp IR sensor.
-     * Returns 0 if nothing is in range.
-     * @param pin the pin the sensor is plugged into, eg: AnalogPin.P0
-     * @param unit cm, mm, inch, or raw
+     * Read how far away the nearest object is using the Sharp IR sensor.
+     * Returns 0 if nothing is detected or the reading is out of range (4–40 cm).
+     * @param pin the analog pin the sensor is on
+     * @param unit cm, mm, inch, or raw ADC value
      */
     //% subcategory="Distance Sensors"
     //% group="IR Distance"
@@ -732,9 +569,9 @@ namespace jellystem {
     }
 
     /**
-     * Is an object closer or farther than a distance you choose?
-     * Returns true or false. Includes blind-spot safety.
-     * @param pin the pin the sensor is plugged into, eg: AnalogPin.P0
+     * Check whether an object is closer or farther than a set distance.
+     * Includes blind-spot safety: a reading of 0 near the sensor still counts as "closer".
+     * @param pin the analog pin the sensor is on
      * @param comparison closer or farther
      * @param threshold the distance to compare against, eg: 15
      * @param unit cm, mm, or inch
@@ -747,20 +584,19 @@ namespace jellystem {
     export function checkIrDistance(pin: AnalogPin, comparison: IrDistanceComparison, threshold: number, unit: IrDistanceUnit): boolean {
         let raw = pins.analogReadPin(pin);
         let d = internalReadSharpIR(pin, unit);
-        if (comparison === IrDistanceComparison.Closer) {
-            return (d > 0 && d < threshold) || (d === 0 && raw > 300);
-        } else {
-            return (d > threshold) || (d === 0 && raw <= 300);
-        }
+        if (comparison === IrDistanceComparison.Closer)
+            return (d > 0 && d < threshold) || (d === 0 && raw > 300); // raw>300 = blind spot (too close)
+        return (d > threshold) || (d === 0 && raw <= 300);
     }
 
     /**
-     * Run code every time an object crosses a distance threshold on the IR sensor.
-     * @param pin the pin the sensor is plugged into, eg: AnalogPin.P0
+     * Run code every time an object crosses a distance threshold (in either direction).
+     * Uses 200 ms debounce to prevent noise from triggering false events.
+     * @param pin the analog pin the sensor is on
      * @param comparison closer or farther
-     * @param threshold the distance to watch for, eg: 15
+     * @param threshold the distance threshold, eg: 15
      * @param unit cm, mm, or inch
-     * @param handler code to run when the threshold is crossed
+     * @param handler code to run on each crossing
      */
     //% subcategory="Distance Sensors"
     //% group="IR Distance"
@@ -780,27 +616,18 @@ namespace jellystem {
                 if (currentState !== stableState) {
                     if (currentState === candidateState) {
                         durationStable += CHECK_INTERVAL;
-                        if (durationStable >= DEBOUNCE_REQUIRED) {
-                            stableState = currentState;
-                            handler();
-                        }
-                    } else {
-                        candidateState = currentState;
-                        durationStable = CHECK_INTERVAL;
-                    }
-                } else {
-                    candidateState = stableState;
-                    durationStable = 0;
-                }
+                        if (durationStable >= DEBOUNCE_REQUIRED) { stableState = currentState; handler(); }
+                    } else { candidateState = currentState; durationStable = CHECK_INTERVAL; }
+                } else { candidateState = stableState; durationStable = 0; }
             }
         });
     }
 
     /**
-     * Run code once the first time an object comes within a distance you set.
-     * Re-arms itself automatically once the object moves away.
-     * @param pin the pin the sensor is plugged into, eg: AnalogPin.P0
-     * @param threshold the detection distance, eg: 15
+     * Run code once the first time an object enters a set range.
+     * Automatically re-arms itself once the object moves away.
+     * @param pin the analog pin the sensor is on
+     * @param threshold detection distance, eg: 15
      * @param unit cm, mm, or inch
      * @param handler code to run when something is detected
      */
@@ -815,27 +642,24 @@ namespace jellystem {
             while (true) {
                 basic.pause(50);
                 let currentlyInside = checkIrDistance(pin, IrDistanceComparison.Closer, threshold, unit);
-                if (currentlyInside && !isInside) {
-                    isInside = true;
-                    handler();
-                } else if (!currentlyInside && isInside) {
-                    isInside = false;
-                }
+                if (currentlyInside && !isInside) { isInside = true; handler(); }
+                else if (!currentlyInside && isInside) { isInside = false; } // re-arm
             }
         });
     }
 
     // =========================================================================
     // --- ULTRASONIC DISTANCE SENSOR (HC-SR04 / RCWL-1601) ---
+    // Time-of-flight sensor. Range: 2–300 cm. Requires Trig + Echo pins.
     // Adapted from MakerBit ultrasonic extension by 1010Technologies
     // github.com/1010Technologies/pxt-makerbit-ultrasonic — MIT License
     // =========================================================================
 
     export enum UltrasonicModel {
         //% block="HC-SR04"
-        HC_SR04 = 58,
+        HC_SR04 = 58,   // 58 μs per cm round-trip at sea level
         //% block="RCWL-1601"
-        RCWL_1601 = 50
+        RCWL_1601 = 50  // 50 μs per cm — different timing due to sensor hardware
     }
 
     export enum UltrasonicUnit {
@@ -857,9 +681,9 @@ namespace jellystem {
     }
 
     const JELLY_ULTRASONIC_EVENT_ID = 700
-    const ULTRASONIC_MAX_TRAVEL_TIME = 17400
-    const ULTRASONIC_MEASUREMENTS = 3
-    const ULTRASONIC_PULSE_INTERVAL_MS = 145
+    const ULTRASONIC_MAX_TRAVEL_TIME = 17400  // 300 cm * 58 μs/cm
+    const ULTRASONIC_MEASUREMENTS = 3         // median of last 3 measurements
+    const ULTRASONIC_PULSE_INTERVAL_MS = 145  // ~7 measurements per second
 
     interface UltrasonicRoundTrip { ts: number; rtt: number }
     interface UltrasonicDevice {
@@ -883,7 +707,7 @@ namespace jellystem {
         pins.digitalWritePin(trig, 0);
         control.waitMicros(2);
         pins.digitalWritePin(trig, 1);
-        control.waitMicros(10);
+        control.waitMicros(10); // 10 μs high pulse triggers the sensor
         pins.digitalWritePin(trig, 0);
     }
 
@@ -892,9 +716,9 @@ namespace jellystem {
             const threshold = ultrasonicState.travelTimeObservers[i]
             if (threshold > 0 && ultrasonicState.medianRoundTrip <= threshold) {
                 control.raiseEvent(JELLY_ULTRASONIC_EVENT_ID, threshold)
-                ultrasonicState.travelTimeObservers[i] = -threshold
+                ultrasonicState.travelTimeObservers[i] = -threshold // negative = already fired, re-armed on exit
             } else if (threshold < 0 && ultrasonicState.medianRoundTrip > -threshold) {
-                ultrasonicState.travelTimeObservers[i] = -threshold
+                ultrasonicState.travelTimeObservers[i] = -threshold // object left range, re-arm
             }
         }
     }
@@ -903,9 +727,8 @@ namespace jellystem {
         const trips = ultrasonicState.roundTrips
         while (true) {
             const now = input.runningTime()
-            if (trips[trips.length - 1].ts < now - ULTRASONIC_PULSE_INTERVAL_MS - 10) {
+            if (trips[trips.length - 1].ts < now - ULTRASONIC_PULSE_INTERVAL_MS - 10)
                 trips.push({ ts: now, rtt: ULTRASONIC_MAX_TRAVEL_TIME })
-            }
             while (trips.length > ULTRASONIC_MEASUREMENTS) { trips.shift() }
             ultrasonicState.medianRoundTrip = ultrasonicMedian(trips.map(urt => urt.rtt))
             ultrasonicTriggerObservers()
@@ -916,18 +739,18 @@ namespace jellystem {
 
     function ultrasonicRttToUnit(rtt: number, model: UltrasonicModel, unit: UltrasonicUnit): number {
         if (unit === UltrasonicUnit.Raw) return rtt;
-        let cm = Math.floor(rtt / (model as number));
+        let cm = Math.floor(rtt / (model as number)); // model value IS the μs-per-cm divisor
         if (unit === UltrasonicUnit.Mm) return cm * 10;
         if (unit === UltrasonicUnit.Inch) return Math.floor(cm / 2.54);
         return cm;
     }
 
     /**
-     * Set up the ultrasonic distance sensor. Run this once in "on start".
-     * Pick your sensor model — HC-SR04 or RCWL-1601.
-     * @param model which ultrasonic sensor you are using
-     * @param trig pin connected to Trig, eg: DigitalPin.P13
-     * @param echo pin connected to Echo, eg: DigitalPin.P14
+     * Set up the ultrasonic distance sensor. Run once in "on start".
+     * Starts a background measurement loop — do not call more than once.
+     * @param model sensor model — HC-SR04 or RCWL-1601 (different timing)
+     * @param trig pin connected to the Trig wire, eg: DigitalPin.P13
+     * @param echo pin connected to the Echo wire, eg: DigitalPin.P14
      */
     //% subcategory="Distance Sensors"
     //% group="Ultrasonic"
@@ -937,32 +760,22 @@ namespace jellystem {
     //% echo.fieldEditor="gridpicker" echo.fieldOptions.columns=4
     //% weight=392
     export function connectUltrasonic(model: UltrasonicModel, trig: DigitalPin, echo: DigitalPin): void {
-        if (ultrasonicState && ultrasonicState.trig) return;
+        if (ultrasonicState && ultrasonicState.trig) return; // already set up — ignore
         if (!ultrasonicState) {
-            ultrasonicState = {
-                trig: trig,
-                model: model,
-                roundTrips: [{ ts: 0, rtt: ULTRASONIC_MAX_TRAVEL_TIME }],
-                medianRoundTrip: ULTRASONIC_MAX_TRAVEL_TIME,
-                travelTimeObservers: []
-            }
-        } else {
-            ultrasonicState.trig = trig;
-            ultrasonicState.model = model;
-        }
+            ultrasonicState = { trig: trig, model: model, roundTrips: [{ ts: 0, rtt: ULTRASONIC_MAX_TRAVEL_TIME }], medianRoundTrip: ULTRASONIC_MAX_TRAVEL_TIME, travelTimeObservers: [] }
+        } else { ultrasonicState.trig = trig; ultrasonicState.model = model; }
         pins.onPulsed(echo, PulseValue.High, () => {
-            if (pins.pulseDuration() < ULTRASONIC_MAX_TRAVEL_TIME &&
-                ultrasonicState.roundTrips.length <= ULTRASONIC_MEASUREMENTS) {
+            if (pins.pulseDuration() < ULTRASONIC_MAX_TRAVEL_TIME && ultrasonicState.roundTrips.length <= ULTRASONIC_MEASUREMENTS)
                 ultrasonicState.roundTrips.push({ ts: input.runningTime(), rtt: pins.pulseDuration() })
-            }
         })
         control.inBackground(ultrasonicMeasureInBackground)
     }
 
     /**
-     * Reads how far away the nearest object is using the ultrasonic sensor.
-     * Returns -1 if the sensor has not been set up yet.
-     * @param unit cm, mm, inch, or raw
+     * Read how far away the nearest object is using the ultrasonic sensor.
+     * Returns -1 if the sensor has not been set up with connectUltrasonic yet.
+     * Uses the median of the last 3 measurements to filter noise.
+     * @param unit cm, mm, inch, or raw round-trip time in μs
      */
     //% subcategory="Distance Sensors"
     //% group="Ultrasonic"
@@ -971,13 +784,13 @@ namespace jellystem {
     //% weight=391
     export function readUltrasonicDistance(unit: UltrasonicUnit): number {
         if (!ultrasonicState) return -1;
-        basic.pause(0);
+        basic.pause(0); // yield so the background fiber can update medianRoundTrip
         return ultrasonicRttToUnit(ultrasonicState.medianRoundTrip, ultrasonicState.model, unit);
     }
 
     /**
-     * Is an object closer or farther than a distance you choose?
-     * Returns true or false.
+     * Check whether an object is closer or farther than a set distance.
+     * Returns false if the sensor has not been set up yet.
      * @param comparison closer or farther
      * @param threshold the distance to compare against, eg: 20
      * @param unit cm, mm, or inch
@@ -994,11 +807,12 @@ namespace jellystem {
     }
 
     /**
-     * Run code every time an object crosses a distance threshold on the ultrasonic sensor.
+     * Run code every time an object crosses a distance threshold (in either direction).
+     * Uses 200 ms debounce to avoid false triggers from sensor noise.
      * @param comparison closer or farther
-     * @param threshold the distance to watch for, eg: 20
+     * @param threshold the distance threshold, eg: 20
      * @param unit cm, mm, or inch
-     * @param handler code to run when the threshold is crossed
+     * @param handler code to run on each crossing
      */
     //% subcategory="Distance Sensors"
     //% group="Ultrasonic"
@@ -1018,26 +832,18 @@ namespace jellystem {
                 if (currentState !== stableState) {
                     if (currentState === candidateState) {
                         durationStable += CHECK_INTERVAL;
-                        if (durationStable >= DEBOUNCE_REQUIRED) {
-                            stableState = currentState;
-                            handler();
-                        }
-                    } else {
-                        candidateState = currentState;
-                        durationStable = CHECK_INTERVAL;
-                    }
-                } else {
-                    candidateState = stableState;
-                    durationStable = 0;
-                }
+                        if (durationStable >= DEBOUNCE_REQUIRED) { stableState = currentState; handler(); }
+                    } else { candidateState = currentState; durationStable = CHECK_INTERVAL; }
+                } else { candidateState = stableState; durationStable = 0; }
             }
         });
     }
 
     /**
-     * Run code once the first time an object comes within a distance you set.
-     * Re-arms itself automatically once the object moves away.
-     * @param distance the detection distance, eg: 20
+     * Run code once the first time an object comes within a set distance.
+     * Automatically re-arms when the object moves away, so it can trigger again.
+     * Uses the hardware event system built into the background measurement loop.
+     * @param distance detection distance, eg: 20
      * @param unit cm, mm, or inch
      * @param handler code to run when something is detected
      */
@@ -1049,14 +855,9 @@ namespace jellystem {
     export function onUltrasonicObjectDetected(distance: number, unit: UltrasonicUnit, handler: () => void): void {
         if (distance <= 0) return;
         if (!ultrasonicState) {
-            ultrasonicState = {
-                trig: undefined,
-                model: UltrasonicModel.HC_SR04,
-                roundTrips: [{ ts: 0, rtt: ULTRASONIC_MAX_TRAVEL_TIME }],
-                medianRoundTrip: ULTRASONIC_MAX_TRAVEL_TIME,
-                travelTimeObservers: []
-            }
+            ultrasonicState = { trig: undefined, model: UltrasonicModel.HC_SR04, roundTrips: [{ ts: 0, rtt: ULTRASONIC_MAX_TRAVEL_TIME }], medianRoundTrip: ULTRASONIC_MAX_TRAVEL_TIME, travelTimeObservers: [] }
         }
+        // Convert the threshold distance to a round-trip time in μs using the model's divisor
         let modelDivisor = ultrasonicState.model as number;
         let divisor = (unit === UltrasonicUnit.Inch) ? Math.floor(modelDivisor * 2.54) : (unit === UltrasonicUnit.Mm) ? Math.floor(modelDivisor / 10) : modelDivisor;
         const travelTimeThreshold = Math.imul(distance, divisor);
@@ -1065,13 +866,15 @@ namespace jellystem {
     }
 
     // =========================================================================
-    // --- NEOPIXEL FULL PARITY WORKSPACE INTEGRATION ---
+    // --- NEOPIXEL (via dependency: microsoft/pxt-neopixel v0.7.3) ---
+    // Full parity wrapper — all blocks appear in the JellySTEM drawer.
     // =========================================================================
 
     /**
-     * Create a new NeoPixel driver for `numleds` LEDs.
-     * @param pin the pin where the neopixel is connected.
-     * @param numleds number of leds in the strip, eg: 24,30,60,64
+     * Create a NeoPixel strip driver. Call once in "on start" and store in a variable.
+     * @param pin the micro:bit pin the data wire is connected to
+     * @param numleds number of LEDs in the strip, eg: 24
+     * @param mode colour format — RGB, RGBW, or RGB+IR
      */
     //% subcategory="NeoPixel"
     //% group="NeoPixel"
@@ -1084,361 +887,278 @@ namespace jellystem {
     }
 
     /**
-     * Shows all LEDs to a given color (range 0-255 for r, g, b).
-     * @param rgb RGB color of the LED
+     * Set every LED on the strip to the same colour and show immediately.
+     * @param rgb colour value from the colour picker
      */
-    //% subcategory="NeoPixel"
     //% subcategory="NeoPixel"
     //% group="NeoPixel"
     //% blockId=jelly_neopixel_show_color
     //% block="%strip|show color %rgb=neopixel_colors"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
+    //% strip.defl=strip strip.shadow=variables_get
     //% weight=85 blockGap=8
-    export function showColor(strip: neopixel.Strip, rgb: number): void {
-        strip.showColor(rgb);
-    }
+    export function showColor(strip: neopixel.Strip, rgb: number): void { strip.showColor(rgb); }
 
     /**
-     * Shows a rainbow pattern on all LEDs.
-     * @param startHue the start hue value for the rainbow, eg: 1
-     * @param endHue the end hue value for the rainbow, eg: 360
+     * Display a rainbow gradient across all LEDs and show immediately.
+     * @param startHue hue at the first LED (1–360), eg: 1
+     * @param endHue hue at the last LED (1–360), eg: 360
      */
     //% subcategory="NeoPixel"
     //% group="NeoPixel"
     //% blockId=jelly_neopixel_show_rainbow
     //% block="%strip|show rainbow from %startHue|to %endHue"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
+    //% strip.defl=strip strip.shadow=variables_get
     //% startHue.defl=1 endHue.defl=360
     //% weight=85 blockGap=8
-    export function showRainbow(strip: neopixel.Strip, startHue: number = 1, endHue: number = 360): void {
-        strip.showRainbow(startHue, endHue);
-    }
+    export function showRainbow(strip: neopixel.Strip, startHue: number = 1, endHue: number = 360): void { strip.showRainbow(startHue, endHue); }
 
     /**
-     * Displays a vertical bar graph based on the `value` and `high` value.
-     * If `high` is 0, the chart gets adjusted automatically.
-     * @param value current value to plot
-     * @param high maximum value, eg: 255
+     * Display a bar graph across the strip based on a value and maximum.
+     * If high is 0 the scale adjusts automatically.
+     * @param value the current reading to display, eg: 128
+     * @param high the maximum value for the scale, eg: 255
      */
     //% subcategory="NeoPixel"
     //% group="NeoPixel"
     //% blockId=jelly_neopixel_show_bar_graph
     //% block="%strip|show bar graph of %value|up to %high"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
+    //% strip.defl=strip strip.shadow=variables_get
     //% weight=84 blockGap=8
-    export function showBarGraph(strip: neopixel.Strip, value: number, high: number): void {
-        strip.showBarGraph(value, high);
-    }
-
-    // --- ADVANCED ("MORE...") NEOPIXEL SUB-GROUP BLOCKS ---
+    export function showBarGraph(strip: neopixel.Strip, value: number, high: number): void { strip.showBarGraph(value, high); }
 
     /**
-     * Set LED to a given color (range 0-255 for r, g, b).
-     * You need to call ``show`` to make the changes visible.
-     * @param pixeloffset position of the NeoPixel in the strip
-     * @param rgb RGB color of the LED
-     */
-    //% subcategory="NeoPixel"
-    //% group="NeoPixel"
-    //% blockId=jelly_neopixel_set_pixel_color
-    //% block="%strip|set pixel color at %pixeloffset|to %rgb=neopixel_colors"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% weight=80 blockGap=8
-    export function setPixelColor(strip: neopixel.Strip, pixeloffset: number, rgb: number): void {
-        strip.setPixelColor(pixeloffset, rgb);
-    }
-
-    /**
-     * Send all the changes to the strip.
-     */
-    //% group="NeoPixel"
-    //% blockId=jelly_neopixel_show
-    //% block="%strip|show" 
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% weight=79 blockGap=8
-    export function show(strip: neopixel.Strip): void {
-        strip.show();
-    }
-
-    /**
-     * Turn off all LEDs.
-     * You need to call ``show`` to make the changes visible.
-     */
-    //% subcategory="NeoPixel"
-    //% group="NeoPixel"
-    //% blockId=jelly_neopixel_clear
-    //% block="%strip|clear"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% weight=76 blockGap=8
-    export function clear(strip: neopixel.Strip): void {
-        strip.clear();
-    }
-
-    /**
-     * Set the brightness of the strip. This flag only applies to future operation.
-     * @param brightness a measure of LED brightness in 0-255. eg: 255
-     */
-    //% subcategory="NeoPixel"
-    //% group="NeoPixel"
-    //% blockId=jelly_neopixel_set_brightness
-    //% block="%strip|set brightness %brightness"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% weight=59 blockGap=8
-    export function setBrightness(strip: neopixel.Strip, brightness: number): void {
-        strip.setBrightness(brightness);
-    }
-
-    /**
-     * Rotate LEDs forward.
-     * You need to call ``show`` to make the changes visible.
-     * @param offset number of pixels to rotate, eg: 1
-     */
-    //% subcategory="NeoPixel"
-    //% group="NeoPixel"
-    //% blockId=jelly_neopixel_rotate
-    //% block="%strip|rotate pixels by %offset"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% offset.defl=1
-    //% weight=39 blockGap=8
-    export function rotate(strip: neopixel.Strip, offset: number = 1): void {
-        strip.rotate(offset);
-    }
-
-    /**
-     * Shift LEDs forward and clear with a zero.
-     * You need to call ``show`` to make the changes visible.
-     * @param offset number of pixels to shift, eg: 1
-     */
-    //% subcategory="NeoPixel"
-    //% group="NeoPixel"
-    //% blockId=jelly_neopixel_shift
-    //% block="%strip|shift pixels by %offset"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% offset.defl=1
-    //% weight=40 blockGap=8
-    export function shift(strip: neopixel.Strip, offset: number = 1): void {
-        strip.shift(offset);
-    }
-
-    /**
-     * Create a new sub-range segment out of an existing NeoPixel strip.
-     * @param start offset position where the new range starts
-     * @param length total number of LEDs in the range
+     * Create a sub-range view of the strip so you can address a section independently.
+     * The returned strip shares the parent buffer — call show on the parent to update.
+     * @param start index of the first LED in the range
+     * @param length number of LEDs in the range
      */
     //% subcategory="NeoPixel"
     //% group="NeoPixel"
     //% blockId=jelly_neopixel_range
     //% block="%strip|range from %start|with %length|leds"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
+    //% strip.defl=strip strip.shadow=variables_get
     //% weight=89 blockGap=8
     //% blockSetVariable=range
-    export function range(strip: neopixel.Strip, start: number, length: number): neopixel.Strip {
-        return strip.range(start, length);
-    }
+    export function range(strip: neopixel.Strip, start: number, length: number): neopixel.Strip { return strip.range(start, length); }
 
     /**
-     * Set individual pixel white LED brightness for RGB+W NeoPixels.
-     * @param pixeloffset position of the LED in the strip
-     * @param white brightness of the white LED, eg: 255
+     * Set one LED to a colour without showing it yet.
+     * Call show() after setting all the pixels you want to change.
+     * @param pixeloffset index of the LED (0 = first)
+     * @param rgb colour value
      */
     //% subcategory="NeoPixel"
     //% group="NeoPixel"
-    //% subcategory="More"
-    //% blockId=jelly_neopixel_set_pixel_white
-    //% block="%strip|set pixel white LED at %pixeloffset|to %white"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
+    //% blockId=jelly_neopixel_set_pixel_color
+    //% block="%strip|set pixel color at %pixeloffset|to %rgb=neopixel_colors"
+    //% strip.defl=strip strip.shadow=variables_get
     //% weight=80 blockGap=8
-    export function setPixelWhiteLED(strip: neopixel.Strip, pixeloffset: number, white: number): void {
-        strip.setPixelWhiteLED(pixeloffset, white);
-    }
+    export function setPixelColor(strip: neopixel.Strip, pixeloffset: number, rgb: number): void { strip.setPixelColor(pixeloffset, rgb); }
 
     /**
-     * Gets the number of pixels declared on the strip.
+     * Push all pending colour changes to the strip so they become visible.
+     * You must call show() after setPixelColor, clear, setBrightness, etc.
      */
     //% subcategory="NeoPixel"
     //% group="NeoPixel"
-    //% subcategory="More"
-    //% blockId=jelly_neopixel_length
-    //% block="%strip|length"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% weight=60 blockGap=8
-    export function length(strip: neopixel.Strip): number {
-        return strip.length();
-    }
+    //% blockId=jelly_neopixel_show
+    //% block="%strip|show"
+    //% strip.defl=strip strip.shadow=variables_get
+    //% weight=79 blockGap=8
+    export function show(strip: neopixel.Strip): void { strip.show(); }
 
     /**
-     * Apply brightness to current colors using a quadratic easing.
+     * Turn off all LEDs (set to black). Call show() to make it visible.
      */
     //% subcategory="NeoPixel"
     //% group="NeoPixel"
-    //% subcategory="More"
-    //% blockId=jelly_neopixel_ease_brightness
-    //% block="%strip|ease brightness"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% weight=58 blockGap=8
-    export function easeBrightness(strip: neopixel.Strip): void {
-        strip.easeBrightness();
-    }
+    //% blockId=jelly_neopixel_clear
+    //% block="%strip|clear"
+    //% strip.defl=strip strip.shadow=variables_get
+    //% weight=76 blockGap=8
+    export function clear(strip: neopixel.Strip): void { strip.clear(); }
 
     /**
-     * Sets the number of pixels in a matrix shaped strip
-     * @param width number of pixels in a row
+     * Set the brightness for all future colour commands (0 = off, 255 = full).
+     * Does not affect already-displayed colours — call show() to update.
+     * @param brightness brightness level 0–255, eg: 128
      */
     //% subcategory="NeoPixel"
     //% group="NeoPixel"
-    //% subcategory="More"
-    //% blockId=jelly_neopixel_set_matrix_width
-    //% block="%strip|set matrix width %width"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% weight=5 blockGap=8
-    export function setMatrixWidth(strip: neopixel.Strip, width: number): void {
-        strip.setMatrixWidth(width);
-    }
+    //% blockId=jelly_neopixel_set_brightness
+    //% block="%strip|set brightness %brightness"
+    //% strip.defl=strip strip.shadow=variables_get
+    //% weight=59 blockGap=8
+    export function setBrightness(strip: neopixel.Strip, brightness: number): void { strip.setBrightness(brightness); }
 
     /**
-     * Set LED to a given color (range 0-255 for r, g, b) in a matrix shaped strip
-     * You need to call ``show`` to make the changes visible.
-     * @param x horizontal position
-     * @param y vertical position
-     * @param rgb RGB color of the LED
+     * Shift all LED colours one step forward and clear the end. Call show() to display.
+     * @param offset number of positions to shift, eg: 1
      */
     //% subcategory="NeoPixel"
     //% group="NeoPixel"
-    //% subcategory="More"
-    //% blockId=jelly_neopixel_set_matrix_color
-    //% block="%strip|set matrix color at x %x|y %y|to %rgb=neopixel_colors"
-    //% strip.defl=strip
-    //% strip.shadow=variables_get
-    //% weight=4 blockGap=8
-    export function setMatrixColor(strip: neopixel.Strip, x: number, y: number, rgb: number): void {
-        strip.setMatrixColor(x, y, rgb);
-    }
-
-    // --- STATIC COLOR HELPER UTILITIES ---
+    //% blockId=jelly_neopixel_shift
+    //% block="%strip|shift pixels by %offset"
+    //% strip.defl=strip strip.shadow=variables_get
+    //% offset.defl=1
+    //% weight=40 blockGap=8
+    export function shift(strip: neopixel.Strip, offset: number = 1): void { strip.shift(offset); }
 
     /**
-     * Gets the RGB value of a known color
+     * Rotate all LED colours forward — the last colour wraps to the front. Call show().
+     * @param offset number of positions to rotate, eg: 1
      */
     //% subcategory="NeoPixel"
     //% group="NeoPixel"
-    //% subcategory="More"
-    //% blockId=jelly_neopixel_colors
-    //% block="%color"
-    //% weight=2 blockGap=8
-    export function colors(color: NeoPixelColors): number {
-        return neopixel.colors(color);
-    }
+    //% blockId=jelly_neopixel_rotate
+    //% block="%strip|rotate pixels by %offset"
+    //% strip.defl=strip strip.shadow=variables_get
+    //% offset.defl=1
+    //% weight=39 blockGap=8
+    export function rotate(strip: neopixel.Strip, offset: number = 1): void { strip.rotate(offset); }
+
+    // --- Color helper utilities ---
 
     /**
-     * Converts red, green, blue channels into an RGB color code value.
+     * Convert hue / saturation / luminosity values to an RGB colour number.
+     * @param h hue 0–360, eg: 180
+     * @param s saturation 0–99, eg: 99
+     * @param l luminosity 0–99, eg: 50
      */
     //% subcategory="NeoPixel"
     //% group="NeoPixel"
-    //% subcategory="More"
-    //% blockId=jelly_neopixel_rgb
-    //% block="red %red|green %green|blue %blue"
-    //% red.min=0 red.max=255 green.min=0 green.max=255 blue.min=0 blue.max=255
-    //% weight=1 blockGap=8
-    export function rgb(red: number, green: number, blue: number): number {
-        return neopixel.rgb(red, green, blue);
-    }
-
-    /**
-     * Converts hue, saturation, luminosity values into an RGB color code value.
-     */
-    //% group="NeoPixel"
-    //% subcategory="NeoPixel"
     //% blockId=jelly_neopixel_hsl
     //% block="hue %h|saturation %s|luminosity %l"
     //% h.min=0 h.max=360 s.min=0 s.max=99 l.min=0 l.max=99
     //% weight=63 blockGap=8
-    export function hsl(h: number, s: number, l: number): number {
-        return neopixel.hsl(h, s, l);
-    }
+    export function hsl(h: number, s: number, l: number): number { return neopixel.hsl(h, s, l); }
 
+    /**
+     * Pick a named colour (Red, Green, Blue, etc.) as an RGB number.
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_colors
+    //% block="%color"
+    //% weight=2 blockGap=8
+    export function colors(color: NeoPixelColors): number { return neopixel.colors(color); }
+
+    /**
+     * Mix red, green, and blue channel values into a single RGB colour number.
+     * @param red red channel 0–255
+     * @param green green channel 0–255
+     * @param blue blue channel 0–255
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_rgb
+    //% block="red %red|green %green|blue %blue"
+    //% red.min=0 red.max=255 green.min=0 green.max=255 blue.min=0 blue.max=255
+    //% weight=1 blockGap=8
+    export function rgb(red: number, green: number, blue: number): number { return neopixel.rgb(red, green, blue); }
+
+    /**
+     * Set the white channel brightness on a single LED (RGBW strips only).
+     * Call show() to make it visible.
+     * @param pixeloffset index of the LED
+     * @param white white brightness 0–255
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_set_pixel_white
+    //% block="%strip|set pixel white LED at %pixeloffset|to %white"
+    //% strip.defl=strip strip.shadow=variables_get
+    //% weight=80 blockGap=8
+    export function setPixelWhiteLED(strip: neopixel.Strip, pixeloffset: number, white: number): void { strip.setPixelWhiteLED(pixeloffset, white); }
+
+    /**
+     * Get the total number of LEDs in the strip.
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_length
+    //% block="%strip|length"
+    //% strip.defl=strip strip.shadow=variables_get
+    //% weight=60 blockGap=8
+    export function length(strip: neopixel.Strip): number { return strip.length(); }
+
+    /**
+     * Apply a quadratic easing curve to the current brightness setting.
+     * Gives a more natural-looking brightness fade.
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_ease_brightness
+    //% block="%strip|ease brightness"
+    //% strip.defl=strip strip.shadow=variables_get
+    //% weight=58 blockGap=8
+    export function easeBrightness(strip: neopixel.Strip): void { strip.easeBrightness(); }
+
+    /**
+     * Declare the number of LEDs per row when your strip is arranged as a grid.
+     * Required before using setMatrixColor.
+     * @param width number of LEDs per row, eg: 8
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_set_matrix_width
+    //% block="%strip|set matrix width %width"
+    //% strip.defl=strip strip.shadow=variables_get
+    //% weight=5 blockGap=8
+    export function setMatrixWidth(strip: neopixel.Strip, width: number): void { strip.setMatrixWidth(width); }
+
+    /**
+     * Set the colour of one LED in a grid layout using x/y coordinates.
+     * Call show() to make it visible.
+     * @param x column (0 = left)
+     * @param y row (0 = top)
+     * @param rgb colour value
+     */
+    //% subcategory="NeoPixel"
+    //% group="NeoPixel"
+    //% blockId=jelly_neopixel_set_matrix_color
+    //% block="%strip|set matrix color at x %x|y %y|to %rgb=neopixel_colors"
+    //% strip.defl=strip strip.shadow=variables_get
+    //% weight=4 blockGap=8
+    export function setMatrixColor(strip: neopixel.Strip, x: number, y: number, rgb: number): void { strip.setMatrixColor(x, y, rgb); }
+
+    // =========================================================================
     // --- OLED 128×64 DISPLAY (via tinkertanker/pxt-oled-ssd1306 v2.0.18) ---
-    // Hardware: plug the OLED into the I2C port (P19 = SCL, P20 = SDA)
-    //
-    // FRAMEBUFFER RENDERER
-    // The tinkertanker library writes pixels one I2C transaction at a time and
-    // cannot read back display RAM, so filled shapes rendered through it have
-    // page-boundary gaps. We maintain our own 1 KB in-memory framebuffer
-    // (128 cols × 8 pages, 1 byte per cell = 8 rows per byte) and flush it
-    // to the display in a single burst. This gives pixel-perfect fills for
-    // both rectangles and circles.
-    //
-    // Text, the progress bar, and the outline drawLine/drawCircle/drawRectangle
-    // calls still go through the tinkertanker library as before.
-    // After using framebuffer shapes, call oledFlush() to push them to screen.
+    // Hardware: SSD1306 chip, I2C address 0x3C, P19=SCL P20=SDA.
+    // Text/progress/outline shapes go through the tinkertanker library.
+    // Filled shapes use an internal 1 KB framebuffer flushed in one I2C burst.
+    // =========================================================================
 
     const OLED_ADDR = 0x3C
     const OLED_WIDTH = 128
-    const OLED_PAGES = 8   // 64px / 8px per page
+    const OLED_PAGES = 8   // 64 px tall / 8 px per page = 8 pages
 
-    // 1024-byte framebuffer: fb[page * 128 + col] holds 8 vertical pixels.
+    // 1 KB framebuffer: fb[page * 128 + col] holds 8 vertical pixel bits
     let oledFb: Buffer = pins.createBuffer(0)
 
     function oledFbInit(): void {
-        if (oledFb.length === 0) {
-            oledFb = pins.createBuffer(OLED_WIDTH * OLED_PAGES)
-        }
+        if (oledFb.length === 0) oledFb = pins.createBuffer(OLED_WIDTH * OLED_PAGES)
     }
 
-    function oledFbSetPixel(x: number, y: number): void {
-        if (x < 0 || x >= OLED_WIDTH || y < 0 || y >= 64) return
-        let page = y >> 3           // which page (y / 8)
-        let bit = y & 7             // which bit within the page byte (y % 8)
-        let idx = page * OLED_WIDTH + x
-        oledFb[idx] = oledFb[idx] | (1 << bit)
-    }
-
-    /** Flush the framebuffer to the OLED display. Call after drawing filled shapes. */
+    // Flush the internal framebuffer to the display in a single I2C burst.
+    // Called automatically by oledRect (filled) and oledCircle (filled).
     function oledFbFlush(): void {
-        // Set column address 0..127
         let cmd = pins.createBuffer(2)
-        cmd[0] = 0x00
-        cmd[1] = 0x21        // SSD1306_SETCOLUMNADRESS
-        pins.i2cWriteBuffer(OLED_ADDR, cmd, false)
-        cmd[1] = 0x00
-        pins.i2cWriteBuffer(OLED_ADDR, cmd, false)
-        cmd[1] = 0x7F        // col 127
-        pins.i2cWriteBuffer(OLED_ADDR, cmd, false)
-        // Set page address 0..7
-        cmd[1] = 0x22        // SSD1306_SETPAGEADRESS
-        pins.i2cWriteBuffer(OLED_ADDR, cmd, false)
-        cmd[1] = 0x00
-        pins.i2cWriteBuffer(OLED_ADDR, cmd, false)
-        cmd[1] = 0x07        // page 7
-        pins.i2cWriteBuffer(OLED_ADDR, cmd, false)
-        // Stream framebuffer in 17-byte chunks (1 control byte + 16 data bytes)
+        cmd[0] = 0x00; cmd[1] = 0x21; pins.i2cWriteBuffer(OLED_ADDR, cmd, false) // set column address command
+        cmd[1] = 0x00; pins.i2cWriteBuffer(OLED_ADDR, cmd, false)                // start column 0
+        cmd[1] = 0x7F; pins.i2cWriteBuffer(OLED_ADDR, cmd, false)                // end column 127
+        cmd[1] = 0x22; pins.i2cWriteBuffer(OLED_ADDR, cmd, false)                // set page address command
+        cmd[1] = 0x00; pins.i2cWriteBuffer(OLED_ADDR, cmd, false)                // start page 0
+        cmd[1] = 0x07; pins.i2cWriteBuffer(OLED_ADDR, cmd, false)                // end page 7
         let chunk = pins.createBuffer(17)
-        chunk[0] = 0x40      // data mode
-        let total = OLED_WIDTH * OLED_PAGES  // 1024
+        chunk[0] = 0x40  // data mode prefix
+        let total = OLED_WIDTH * OLED_PAGES  // 1024 bytes
         for (let i = 0; i < total; i += 16) {
-            for (let j = 0; j < 16; j++) {
-                chunk[j + 1] = (i + j < total) ? oledFb[i + j] : 0
-            }
+            for (let j = 0; j < 16; j++) chunk[j + 1] = (i + j < total) ? oledFb[i + j] : 0
             pins.i2cWriteBuffer(OLED_ADDR, chunk, false)
         }
     }
 
-    /**
-     * Circle style — outline only, or filled solid.
-     */
     export enum OledCircleStyle {
         //% block="outline"
         Outline = 0,
@@ -1446,9 +1166,6 @@ namespace jellystem {
         Filled = 1
     }
 
-    /**
-     * Rectangle style — outline only, or filled solid.
-     */
     export enum OledRectStyle {
         //% block="outline"
         Outline = 0,
@@ -1457,10 +1174,12 @@ namespace jellystem {
     }
 
     /**
-     * Set up the OLED display. Run this once in "on start".
-     * Plug the display into the I2C port: SDA to P20, SCL to P19.
+     * Set up the SSD1306 OLED display. Run once in "on start".
+     * Connects via I2C on P19 (SCL) and P20 (SDA) at address 0x3C.
+     * Also initialises the internal framebuffer used by filled-shape blocks.
      */
-    //% group="OLED Display"
+    //% subcategory="OLED Display"
+    //% group="SSD1306 128×64"
     //% blockId=jelly_oled_init
     //% block="set up OLED display on I2C (P19/P20)"
     //% weight=310
@@ -1471,9 +1190,10 @@ namespace jellystem {
     }
 
     /**
-     * Erase everything on the OLED screen.
+     * Erase everything on the OLED screen and reset the framebuffer.
      */
-    //% group="OLED Display"
+    //% subcategory="OLED Display"
+    //% group="SSD1306 128×64"
     //% blockId=jelly_oled_clear
     //% block="OLED clear screen"
     //% weight=309
@@ -1484,107 +1204,88 @@ namespace jellystem {
     }
 
     /**
-     * Display a line of text on the OLED screen.
-     * Each call goes on its own line — up to 8 lines fit on screen.
-     * @param text the text to display, eg: "Hello!"
+     * Show a line of text on the OLED screen and advance to the next line.
+     * Up to 8 lines of 16 characters fit on the 128×64 screen.
+     * @param text the text to show, eg: "Hello!"
      */
-    //% group="OLED Display"
+    //% subcategory="OLED Display"
+    //% group="SSD1306 128×64"
     //% blockId=jelly_oled_display_string
     //% block="OLED display %text"
     //% weight=308
-    export function oledDisplay(text: string): void {
-        OLED.writeStringNewLine(text)
-    }
+    export function oledDisplay(text: string): void { OLED.writeStringNewLine(text) }
 
     /**
-     * Display a number on the OLED screen on its own line.
-     * @param num the number to display, eg: 42
+     * Show a number on the OLED screen on its own line.
+     * @param num the number to show, eg: 42
      */
-    //% group="OLED Display"
+    //% subcategory="OLED Display"
+    //% group="SSD1306 128×64"
     //% blockId=jelly_oled_display_number
     //% block="OLED display number %num"
     //% weight=307
-    export function oledDisplayNumber(num: number): void {
-        OLED.writeNumNewLine(num)
-    }
+    export function oledDisplayNumber(num: number): void { OLED.writeNumNewLine(num) }
 
     /**
-     * Draw a progress bar that fills up to a percentage you choose.
-     * Call oledInit first. Calling this multiple times updates the bar.
-     * @param percent how full the bar is, from 0 to 100
+     * Draw a progress bar that fills across the bottom of the screen.
+     * Calling it repeatedly updates the bar in place — no need to clear first.
+     * @param percent fill level from 0 to 100
      */
-    //% group="OLED Display"
+    //% subcategory="OLED Display"
+    //% group="SSD1306 128×64"
     //% blockId=jelly_oled_bar
     //% block="OLED progress bar %percent \\%"
     //% percent.min=0 percent.max=100
     //% weight=306
-    export function oledProgressBar(percent: number): void {
-        OLED.drawLoading(percent)
-    }
+    export function oledProgressBar(percent: number): void { OLED.drawLoading(percent) }
 
     /**
      * Draw a straight line between two points on the OLED screen.
-     * Screen is 128 pixels wide (x) and 64 pixels tall (y).
-     * @param x0 start x (0-127), eg: 0
-     * @param y0 start y (0-63), eg: 0
-     * @param x1 end x (0-127), eg: 50
-     * @param y1 end y (0-63), eg: 30
+     * Screen coordinates: x 0–127 (left→right), y 0–63 (top→bottom).
+     * @param x0 start x, eg: 0
+     * @param y0 start y, eg: 0
+     * @param x1 end x, eg: 64
+     * @param y1 end y, eg: 32
      */
-    //% group="OLED Display"
+    //% subcategory="OLED Display"
+    //% group="SSD1306 128×64"
     //% blockId=jelly_oled_draw_line
     //% block="OLED line from x %x0 y %y0 to x %x1 y %y1"
     //% weight=305
-    export function oledLine(x0: number, y0: number, x1: number, y1: number): void {
-        OLED.drawLine(x0, y0, x1, y1)
-    }
+    export function oledLine(x0: number, y0: number, x1: number, y1: number): void { OLED.drawLine(x0, y0, x1, y1) }
 
     /**
-     * Draw a rectangle on the OLED screen. Pick outline or filled.
-     * Filled rectangles are rendered through the framebuffer for a clean solid fill.
-     * Call oledClear before drawing and shapes will appear immediately.
+     * Draw a rectangle on the OLED screen using two corner points.
+     * Filled rectangles use the framebuffer renderer for a clean solid fill.
      * @param style outline or filled
-     * @param x0 top-left x (0-127), eg: 10
-     * @param y0 top-left y (0-63), eg: 10
-     * @param x1 bottom-right x (0-127), eg: 60
-     * @param y1 bottom-right y (0-63), eg: 40
+     * @param x0 top-left x (0–127), eg: 10
+     * @param y0 top-left y (0–63), eg: 10
+     * @param x1 bottom-right x (0–127), eg: 60
+     * @param y1 bottom-right y (0–63), eg: 40
      */
-    //% group="OLED Display"
+    //% subcategory="OLED Display"
+    //% group="SSD1306 128×64"
     //% blockId=jelly_oled_draw_rect
     //% block="OLED %style rectangle from x %x0 y %y0 to x %x1 y %y1"
     //% weight=304
     export function oledRect(style: OledRectStyle, x0: number, y0: number, x1: number, y1: number): void {
         if (style === OledRectStyle.Filled) {
             oledFbInit()
-            let top = Math.min(y0, y1)
-            let bottom = Math.max(y0, y1)
-            let left = Math.min(x0, x1)
-            let right = Math.max(x0, x1)
-            // Clamp to screen
-            top = Math.max(0, top)
-            bottom = Math.min(63, bottom)
-            left = Math.max(0, left)
-            right = Math.min(127, right)
-            // Fill every pixel in the region into the framebuffer,
-            // working page by page for efficiency.
+            let top = Math.max(0, Math.min(y0, y1))
+            let bottom = Math.min(63, Math.max(y0, y1))
+            let left = Math.max(0, Math.min(x0, x1))
+            let right = Math.min(127, Math.max(x0, x1))
             let pageTop = top >> 3
             let pageBot = bottom >> 3
             for (let page = pageTop; page <= pageBot; page++) {
-                // Build the byte mask for this page:
-                // which of the 8 row-bits fall inside [top, bottom]?
                 let rowStart = page * 8
-                let rowEnd = rowStart + 7
-                let bitStart = Math.max(top, rowStart) - rowStart   // 0-7
-                let bitEnd = Math.min(bottom, rowEnd) - rowStart     // 0-7
-                // Set bits bitStart..bitEnd inclusive
+                // Build bitmask for which of the 8 rows in this page are inside the rect
+                let bitStart = Math.max(top, rowStart) - rowStart
+                let bitEnd = Math.min(bottom, rowStart + 7) - rowStart
                 let mask = 0
-                for (let b = bitStart; b <= bitEnd; b++) {
-                    mask = mask | (1 << b)
-                }
-                // Write mask across every column in the row
+                for (let b = bitStart; b <= bitEnd; b++) mask = mask | (1 << b)
                 let base = page * OLED_WIDTH
-                for (let col = left; col <= right; col++) {
-                    oledFb[base + col] = oledFb[base + col] | mask
-                }
+                for (let col = left; col <= right; col++) oledFb[base + col] = oledFb[base + col] | mask
             }
             oledFbFlush()
         } else {
@@ -1593,15 +1294,16 @@ namespace jellystem {
     }
 
     /**
-     * Draw a circle on the OLED screen. Pick outline or filled.
-     * Filled circles are rendered through the framebuffer for a clean solid fill
-     * at any radius.
+     * Draw a circle on the OLED screen.
+     * Filled circles use the framebuffer renderer (column-by-column midpoint algorithm)
+     * for a clean solid fill without page-boundary gaps.
      * @param style outline or filled
-     * @param x centre x position (0-127), eg: 64
-     * @param y centre y position (0-63), eg: 32
+     * @param x centre x (0–127), eg: 64
+     * @param y centre y (0–63), eg: 32
      * @param r radius in pixels, eg: 15
      */
-    //% group="OLED Display"
+    //% subcategory="OLED Display"
+    //% group="SSD1306 128×64"
     //% blockId=jelly_oled_draw_circle
     //% block="OLED %style circle at x %x y %y radius %r"
     //% x.defl=64 y.defl=32 r.defl=15
@@ -1609,17 +1311,13 @@ namespace jellystem {
     export function oledCircle(style: OledCircleStyle, x: number, y: number, r: number): void {
         if (style === OledCircleStyle.Filled) {
             oledFbInit()
-            // Midpoint circle algorithm — for each column dx, compute the
-            // vertical span and fill it in the framebuffer page by page.
+            // For each column, compute the vertical chord length and fill it page-by-page
             for (let dx = -r; dx <= r; dx++) {
                 let h = Math.floor(Math.sqrt(r * r - dx * dx))
                 let colX = x + dx
-                let yTop = y - h
-                let yBot = y + h
+                let yTop = Math.max(0, y - h)
+                let yBot = Math.min(63, y + h)
                 if (colX < 0 || colX >= OLED_WIDTH) continue
-                yTop = Math.max(0, yTop)
-                yBot = Math.min(63, yBot)
-                // Fill this column from yTop to yBot using page-aware masking
                 let pageTop = yTop >> 3
                 let pageBot = yBot >> 3
                 for (let page = pageTop; page <= pageBot; page++) {
@@ -1627,9 +1325,7 @@ namespace jellystem {
                     let bitStart = Math.max(yTop, rowStart) - rowStart
                     let bitEnd = Math.min(yBot, rowStart + 7) - rowStart
                     let mask = 0
-                    for (let b = bitStart; b <= bitEnd; b++) {
-                        mask = mask | (1 << b)
-                    }
+                    for (let b = bitStart; b <= bitEnd; b++) mask = mask | (1 << b)
                     let idx = page * OLED_WIDTH + colX
                     oledFb[idx] = oledFb[idx] | mask
                 }
@@ -1640,10 +1336,117 @@ namespace jellystem {
         }
     }
 
+    // =========================================================================
+    // --- SERVO (via dependency: microsoft/pxt-common-packages/libs/servo) ---
+    // These blocks drive servos on the micro:bit edge connector pins (P0/P1/P2)
+    // directly — no mShield board required. They will be merged with the mShield
+    // PWM port servo blocks in a future update.
+    // =========================================================================
+
+    export enum ServoPin {
+        //% block="P0"
+        P0 = 0,
+        //% block="P1"
+        P1 = 1,
+        //% block="P2"
+        P2 = 2
+    }
+
+    function getServo(pin: ServoPin): servos.Servo {
+        if (pin === ServoPin.P1) return servos.P1;
+        if (pin === ServoPin.P2) return servos.P2;
+        return servos.P0;
+    }
+
+    /**
+     * Turn a positional servo to a specific angle.
+     * 0° = full left, 90° = centre, 180° = full right.
+     * Plug the servo directly into the micro:bit edge connector.
+     * @param pin edge connector pin the servo is on
+     * @param degrees angle to move to, eg: 90
+     */
+    //% subcategory="Servo"
+    //% group="Direct Pin (P0/P1/P2)"
+    //% blockId=jelly_servo_set_angle
+    //% block="set servo %pin to %degrees °"
+    //% degrees.min=0 degrees.max=180 degrees.defl=90
+    //% weight=335
+    export function servoSetAngle(pin: ServoPin, degrees: number): void { getServo(pin).setAngle(degrees); }
+
+    /**
+     * Run a continuous (360°) servo at a set speed.
+     * Positive = forward, negative = backward, 0 = stop.
+     * @param pin edge connector pin the servo is on
+     * @param speed speed from -100 to 100, eg: 50
+     */
+    //% subcategory="Servo"
+    //% group="Direct Pin (P0/P1/P2)"
+    //% blockId=jelly_servo_run
+    //% block="continuous servo %pin run at %speed \\%"
+    //% speed.min=-100 speed.max=100 speed.defl=50
+    //% weight=334
+    export function servoRun(pin: ServoPin, speed: number): void { getServo(pin).run(speed); }
+
+    /**
+     * Stop a servo. It holds its last position but will not resist being moved.
+     * @param pin edge connector pin the servo is on
+     */
+    //% subcategory="Servo"
+    //% group="Direct Pin (P0/P1/P2)"
+    //% blockId=jelly_servo_stop
+    //% block="stop servo %pin"
+    //% weight=333
+    export function servoStop(pin: ServoPin): void { getServo(pin).stop(); }
+
+    /**
+     * Set the servo signal pulse width directly in microseconds.
+     * 1000 μs = far left, 1500 μs = centre, 2000 μs = far right.
+     * Useful for non-standard or fine-tuning scenarios.
+     * @param pin edge connector pin the servo is on
+     * @param micros pulse width in μs, eg: 1500
+     */
+    //% subcategory="Servo"
+    //% group="Direct Pin (P0/P1/P2)"
+    //% blockId=jelly_servo_set_pulse
+    //% block="set servo %pin pulse to %micros μs"
+    //% micros.min=500 micros.max=2500 micros.defl=1500
+    //% weight=332
+    export function servoSetPulse(pin: ServoPin, micros: number): void { getServo(pin).setPulse(micros); }
+
+    /**
+     * Limit the angle range a servo can move to.
+     * Useful if your servo physically cannot reach 0° or 180°.
+     * @param pin edge connector pin the servo is on
+     * @param minAngle minimum allowed angle, eg: 0
+     * @param maxAngle maximum allowed angle, eg: 180
+     */
+    //% subcategory="Servo"
+    //% group="Direct Pin (P0/P1/P2)"
+    //% blockId=jelly_servo_set_range
+    //% block="set servo %pin range %minAngle to %maxAngle °"
+    //% minAngle.min=0 minAngle.max=90 minAngle.defl=0
+    //% maxAngle.min=90 maxAngle.max=180 maxAngle.defl=180
+    //% weight=331
+    export function servoSetRange(pin: ServoPin, minAngle: number, maxAngle: number): void { getServo(pin).setRange(minAngle, maxAngle); }
+
+    /**
+     * Set whether a continuous servo auto-stops when it reaches the centre (90°).
+     * Useful for self-centering steering mechanisms.
+     * @param pin edge connector pin the servo is on
+     * @param enabled true to stop at neutral position
+     */
+    //% subcategory="Servo"
+    //% group="Direct Pin (P0/P1/P2)"
+    //% blockId=jelly_servo_stop_on_neutral
+    //% block="set servo %pin stop at middle %enabled"
+    //% enabled.shadow=toggleOnOff
+    //% weight=330
+    export function servoSetStopOnNeutral(pin: ServoPin, enabled: boolean): void { getServo(pin).setStopOnNeutral(enabled); }
+
 }
 
 // --- SILENT SIDEBAR OVERRIDE LAYER ---
-// Forces the background tracking dependency category tab out of sight.
+// Forces dependency category tabs out of the sidebar so only JellySTEM shows.
 //% deprecated=true
 namespace neopixel { }
 
