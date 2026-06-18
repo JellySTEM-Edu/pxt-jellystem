@@ -395,7 +395,7 @@ namespace jellystem {
      * @param type PWM or servo
      */
     //% subcategory="mShield"
-    //% group="PWM port"
+    //% group="S1-S4 Setup"
     //% weight=350
     //% block="set S1–S4 type to %type"
     export function setS1ToS4Type(type: S1ToS4Type): void { writeReg2Bytes(0x0f, type); }
@@ -406,7 +406,7 @@ namespace jellystem {
      * @param pulseWidth pulse width value, eg: 100
      */
     //% subcategory="mShield"
-    //% group="PWM port"
+    //% group="S1-S4 Ports"
     //% weight=349
     //% block="set %index PWM to %pulseWidth"
     //% pulseWidth.min=0 pulseWidth.max=200
@@ -428,7 +428,7 @@ namespace jellystem {
      * @param angle target angle in degrees, eg: 90
      */
     //% subcategory="mShield"
-    //% group="mShield (S1-S4)"
+    //% group="S1-S4 Ports"
     //% weight=348
     //% block="set %index %servoType servo to %angle°"
     //% angle.defl=0
@@ -1455,7 +1455,7 @@ namespace jellystem {
      * @param micros pulse width in μs, eg: 1500
      */
     //% subcategory="mShield"
-    //% group="Direct Pin (P0-P2)"
+    //% group="Servo"
     //% blockId=jelly_servo_set_pulse
     //% block="set servo %pin pulse to %micros μs"
     //% micros.min=500 micros.max=2500 micros.defl=1500
