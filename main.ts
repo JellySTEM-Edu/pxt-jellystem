@@ -16,7 +16,7 @@
 */
 
 //% weight=100 color="#246C64" icon="\uf1b2" block="JellySTEM"
-//% subcategories='["mShield", "Servo", "NeoPixel", "OLED Display", "Distance Sensors"]'
+//% subcategories='["mShield", "NeoPixel", "OLED Display", "Distance Sensors"]'
 namespace jellystem {
     export enum MotorsDirection {
         //%block="clockwise"
@@ -526,12 +526,12 @@ namespace jellystem {
      * @param pin edge connector pin the servo is on
      * @param degrees angle to move to, eg: 90
      */
-    //% subcategory="Servo"
+    //% subcategory="mShield"
     //% group="Direct Pin (P0/P1/P2)"
     //% blockId=jelly_servo_set_angle
     //% block="set servo %pin to %degrees °"
     //% degrees.min=0 degrees.max=180 degrees.defl=90
-    //% weight=335
+    //% weight=346
     export function servoSetAngle(pin: ServoPin, degrees: number): void { getServo(pin).setAngle(degrees); }
 
     /**
@@ -540,23 +540,23 @@ namespace jellystem {
      * @param pin edge connector pin the servo is on
      * @param speed speed from -100 to 100, eg: 50
      */
-    //% subcategory="Servo"
+    //% subcategory="mShield"
     //% group="Direct Pin (P0/P1/P2)"
     //% blockId=jelly_servo_run
     //% block="continuous servo %pin run at %speed \\%"
     //% speed.min=-100 speed.max=100 speed.defl=50
-    //% weight=334
+    //% weight=345
     export function servoRun(pin: ServoPin, speed: number): void { getServo(pin).run(speed); }
 
     /**
      * Stop a servo. It holds its last position but will not resist being moved.
      * @param pin edge connector pin the servo is on
      */
-    //% subcategory="Servo"
+    //% subcategory="mShield"
     //% group="Direct Pin (P0/P1/P2)"
     //% blockId=jelly_servo_stop
     //% block="stop servo %pin"
-    //% weight=333
+    //% weight=344
     export function servoStop(pin: ServoPin): void { getServo(pin).stop(); }
 
     /**
@@ -566,12 +566,12 @@ namespace jellystem {
      * @param pin edge connector pin the servo is on
      * @param micros pulse width in μs, eg: 1500
      */
-    //% subcategory="Servo"
+    //% subcategory="mShield"
     //% group="Direct Pin (P0/P1/P2)"
     //% blockId=jelly_servo_set_pulse
     //% block="set servo %pin pulse to %micros μs"
     //% micros.min=500 micros.max=2500 micros.defl=1500
-    //% weight=332
+    //% weight=343
     export function servoSetPulse(pin: ServoPin, micros: number): void { getServo(pin).setPulse(micros); }
 
     /**
@@ -581,13 +581,13 @@ namespace jellystem {
      * @param minAngle minimum allowed angle, eg: 0
      * @param maxAngle maximum allowed angle, eg: 180
      */
-    //% subcategory="Servo"
+    //% subcategory="mShield"
     //% group="Direct Pin (P0/P1/P2)"
     //% blockId=jelly_servo_set_range
     //% block="set servo %pin range %minAngle to %maxAngle °"
     //% minAngle.min=0 minAngle.max=90 minAngle.defl=0
     //% maxAngle.min=90 maxAngle.max=180 maxAngle.defl=180
-    //% weight=331
+    //% weight=342
     export function servoSetRange(pin: ServoPin, minAngle: number, maxAngle: number): void { getServo(pin).setRange(minAngle, maxAngle); }
 
     /**
@@ -596,12 +596,12 @@ namespace jellystem {
      * @param pin edge connector pin the servo is on
      * @param enabled true to stop at neutral position
      */
-    //% subcategory="Servo"
+    //% subcategory="mShield"
     //% group="Direct Pin (P0/P1/P2)"
     //% blockId=jelly_servo_stop_on_neutral
     //% block="set servo %pin stop at middle %enabled"
     //% enabled.shadow=toggleOnOff
-    //% weight=330
+    //% weight=341
     export function servoSetStopOnNeutral(pin: ServoPin, enabled: boolean): void { getServo(pin).setStopOnNeutral(enabled); }
 
     // =========================================================================
