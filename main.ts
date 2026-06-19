@@ -862,8 +862,8 @@ namespace jellystem {
     //% block="set up %model ultrasonic sensor: Trig %trig Echo %echo"
     //% trig.fieldEditor="gridpicker" trig.fieldOptions.columns=4
     //% echo.fieldEditor="gridpicker" echo.fieldOptions.columns=4
-    //% trig.defl=p0
-    //% echo.defl=p1
+    //% trig.defl=DigitalPin.P0
+    //% echo.defl=DigitalPin.P6
     //% model.defl=RCWL_1601
     //% weight=396
     export function connectUltrasonic(model: UltrasonicModel, trig: DigitalPin, echo: DigitalPin): void {
