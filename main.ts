@@ -392,7 +392,7 @@ namespace jellystem {
      * @param type PWM or servo
      */
     //% subcategory="mShield"
-    //% group="Servos (S1/S2)"
+    //% group="Servos (S1/S2/S3/S4)"
     //% weight=350
     //% block="set S1–S4 type to %type"
     export function setS1ToS4Type(type: S1ToS4Type): void { writeReg2Bytes(0x0f, type); }
@@ -403,7 +403,7 @@ namespace jellystem {
      * @param pulseWidth pulse width value, eg: 100
      */
     //% subcategory="mShield"
-    //% group="Servos (S1/S2)"
+    //% group="Servos (S1/S2/S3/S4)"
     //% weight=349
     //% block="set %index PWM to %pulseWidth"
     //% pulseWidth.min=0 pulseWidth.max=200
@@ -445,7 +445,7 @@ namespace jellystem {
      * @param speed speed from -100 to 100, eg: 0
      */
     //% subcategory="mShield"
-    //% group="Servos (S1/S2)"
+    //% group="Servos (S1/S2/S3/S4)"
     //% weight=347
     //% block="set %index 360° servo speed to %speed\\%"
     //% speed.min=-100 speed.max=100
@@ -453,48 +453,6 @@ namespace jellystem {
     export function continuousServoControl(index: PwmAndServoIndex, speed: number): void {
         speed = pins.map(speed, -100, 100, 0, 180);
         extendServoControl(index, ServoType.Servo180, speed);
-    }
-
-    /**
-     * Read the battery level as a percentage (0–100).
-     * Tell it what battery type you are using so it can calculate correctly.
-     * @param batType battery chemistry and cell count
-     */
-    //% subcategory="mShield"
-    //% group="Battery"
-    //% weight=340
-    //% block="battery level with %batType"
-    export function batteryLevel(batType: BatteryType): number {
-        writeReg1Byte(batType);
-        let batLevel = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false);
-        return Math.min(100, batLevel);
-    }
-
-    /**
-     * Read the raw battery voltage in volts (0–25.5 V).
-     */
-    //% subcategory="mShield"
-    //% group="Battery"
-    //% weight=339
-    //% block="battery voltage"
-    export function batteryVoltage(): number {
-        writeReg1Byte(0x1B);
-        let batVolt = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false);
-        return batVolt / 10;
-    }
-
-    /**
-     * Read the firmware version string from the mShield chip.
-     * Returns a string like "V3".
-     */
-    //% subcategory="mShield"
-    //% group="Others"
-    //% weight=330
-    //% block="version number"
-    export function readVersions(): string {
-        writeReg1Byte(0x00);
-        let mCarVersions = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false);
-        return `V${mCarVersions}`;
     }
 
     // =========================================================================
@@ -603,6 +561,50 @@ namespace jellystem {
     //% enabled.shadow=toggleOnOff
     //% weight=341
     export function servoSetStopOnNeutral(pin: ServoPin, enabled: boolean): void { getServo(pin).setStopOnNeutral(enabled); }
+
+    // Moved battery functions from mShield extension to here for better organization
+
+    /**
+     * Read the battery level as a percentage (0–100).
+     * Tell it what battery type you are using so it can calculate correctly.
+     * @param batType battery chemistry and cell count
+     */
+    //% subcategory="mShield"
+    //% group="Battery"
+    //% weight=340
+    //% block="battery level with %batType"
+    export function batteryLevel(batType: BatteryType): number {
+        writeReg1Byte(batType);
+        let batLevel = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false);
+        return Math.min(100, batLevel);
+    }
+
+    /**
+     * Read the raw battery voltage in volts (0–25.5 V).
+     */
+    //% subcategory="mShield"
+    //% group="Battery"
+    //% weight=339
+    //% block="battery voltage"
+    export function batteryVoltage(): number {
+        writeReg1Byte(0x1B);
+        let batVolt = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false);
+        return batVolt / 10;
+    }
+
+    /**
+     * Read the firmware version string from the mShield chip.
+     * Returns a string like "V3".
+     */
+    //% subcategory="mShield"
+    //% group="Others"
+    //% weight=330
+    //% block="version number"
+    export function readVersions(): string {
+        writeReg1Byte(0x00);
+        let mCarVersions = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt8LE, false);
+        return `V${mCarVersions}`;
+    }
 
     // =========================================================================
     // --- IR DISTANCE SENSOR: SHARP GP2Y0A41SK0F ---
