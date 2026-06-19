@@ -864,6 +864,7 @@ namespace jellystem {
     //% echo.fieldEditor="gridpicker" echo.fieldOptions.columns=4
     //% trig.defl=p0
     //% echo.defl=p1
+    //% model.defl=RCWL_1601
     //% weight=396
     export function connectUltrasonic(model: UltrasonicModel, trig: DigitalPin, echo: DigitalPin): void {
         if (ultrasonicState && ultrasonicState.trig) return; // already set up — ignore
