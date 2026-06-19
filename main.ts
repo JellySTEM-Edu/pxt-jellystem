@@ -392,7 +392,7 @@ namespace jellystem {
      * @param type PWM or servo
      */
     //% subcategory="mShield"
-    //% group="S1-S4 Setup"
+    //% group="Servos (S1/S2)"
     //% weight=350
     //% block="set S1–S4 type to %type"
     export function setS1ToS4Type(type: S1ToS4Type): void { writeReg2Bytes(0x0f, type); }
@@ -403,7 +403,7 @@ namespace jellystem {
      * @param pulseWidth pulse width value, eg: 100
      */
     //% subcategory="mShield"
-    //% group="S1-S4 Ports"
+    //% group="Servos (S1/S2)"
     //% weight=349
     //% block="set %index PWM to %pulseWidth"
     //% pulseWidth.min=0 pulseWidth.max=200
@@ -423,7 +423,7 @@ namespace jellystem {
      * @param angle target angle in degrees, eg: 90
      */
     //% subcategory="mShield"
-    //% group="S1-S4 Ports"
+    //% group="Servos (S1/S2/S3/S4)"
     //% weight=348
     //% block="set %index %servoType servo to %angle°"
     //% angle.defl=0
@@ -445,7 +445,7 @@ namespace jellystem {
      * @param speed speed from -100 to 100, eg: 0
      */
     //% subcategory="mShield"
-    //% group="S1-S4 Ports"
+    //% group="Servos (S1/S2)"
     //% weight=347
     //% block="set %index 360° servo speed to %speed\\%"
     //% speed.min=-100 speed.max=100
@@ -527,7 +527,7 @@ namespace jellystem {
      * @param degrees angle to move to, eg: 90
      */
     //% subcategory="mShield"
-    //% group="Direct Pin (P0/P1/P2)"
+    //% group="Servos (P0/P1/P2)"
     //% blockId=jelly_servo_set_angle
     //% block="set servo %pin to %degrees °"
     //% degrees.min=0 degrees.max=180 degrees.defl=90
@@ -541,7 +541,7 @@ namespace jellystem {
      * @param speed speed from -100 to 100, eg: 50
      */
     //% subcategory="mShield"
-    //% group="Direct Pin (P0/P1/P2)"
+    //% group="Servos (P0/P1/P2)"
     //% blockId=jelly_servo_run
     //% block="continuous servo %pin run at %speed \\%"
     //% speed.min=-100 speed.max=100 speed.defl=50
@@ -553,7 +553,7 @@ namespace jellystem {
      * @param pin edge connector pin the servo is on
      */
     //% subcategory="mShield"
-    //% group="Direct Pin (P0/P1/P2)"
+    //% group="Servos (P0/P1/P2)"
     //% blockId=jelly_servo_stop
     //% block="stop servo %pin"
     //% weight=344
@@ -567,7 +567,7 @@ namespace jellystem {
      * @param micros pulse width in μs, eg: 1500
      */
     //% subcategory="mShield"
-    //% group="Direct Pin (P0/P1/P2)"
+    //% group="Servos (P0/P1/P2)"
     //% blockId=jelly_servo_set_pulse
     //% block="set servo %pin pulse to %micros μs"
     //% micros.min=500 micros.max=2500 micros.defl=1500
@@ -582,7 +582,7 @@ namespace jellystem {
      * @param maxAngle maximum allowed angle, eg: 180
      */
     //% subcategory="mShield"
-    //% group="Direct Pin (P0/P1/P2)"
+    //% group="Servos (P0/P1/P2)"
     //% blockId=jelly_servo_set_range
     //% block="set servo %pin range %minAngle to %maxAngle °"
     //% minAngle.min=0 minAngle.max=90 minAngle.defl=0
@@ -597,7 +597,7 @@ namespace jellystem {
      * @param enabled true to stop at neutral position
      */
     //% subcategory="mShield"
-    //% group="Direct Pin (P0/P1/P2)"
+    //% group="Servos (P0/P1/P2)"
     //% blockId=jelly_servo_stop_on_neutral
     //% block="set servo %pin stop at middle %enabled"
     //% enabled.shadow=toggleOnOff
