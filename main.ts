@@ -863,7 +863,7 @@ namespace jellystem {
     //% trig.fieldEditor="gridpicker" trig.fieldOptions.columns=4
     //% echo.fieldEditor="gridpicker" echo.fieldOptions.columns=4
     //% trig.defl=DigitalPin.P0
-    //% echo.defl=DigitalPin.P6
+    //% echo.defl=DigitalPin.P0
     //% model.defl=RCWL_1601
     //% weight=396
     export function connectUltrasonic(model: UltrasonicModel, trig: DigitalPin, echo: DigitalPin): void {
