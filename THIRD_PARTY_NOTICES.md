@@ -49,6 +49,25 @@ Changes by JellySTEM:
 ---
 
 Project name:
+Microsoft pxt-common-packages (servo)
+
+Repository:
+[github.com/microsoft/pxt-common-packages/libs/servo](https://github.com/microsoft/pxt-common-packages/tree/master/libs/servo)
+
+License:
+MIT License
+
+Original copyright:
+Copyright (c) Microsoft Corporation
+
+Changes by JellySTEM:
+- Linked as a versioned dependency
+- e-exposed its blocks inside the unified JellySTEM drawer via thin wrapper functions under the "Servo" group. 
+- The upstream servo drawer is suppressed using //% deprecated=true.
+
+---
+
+Project name:
 1010Technologies pxt-makerbit-ultrasonic
 
 Repository:
