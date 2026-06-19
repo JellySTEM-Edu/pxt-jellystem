@@ -439,6 +439,23 @@ namespace jellystem {
     }
 
     /**
+     * Run a 360° continuous rotation servo at a set speed.
+     * Speed -100 = full reverse, 0 = stop, 100 = full forward.
+     * @param index which S port the servo is on
+     * @param speed speed from -100 to 100, eg: 0
+     */
+    //% subcategory="mShield"
+    //% group="S1-S4 Ports"
+    //% weight=347
+    //% block="set %index 360° servo speed to %speed\\%"
+    //% speed.min=-100 speed.max=100
+    //% speed.defl=0
+    export function continuousServoControl(index: PwmAndServoIndex, speed: number): void {
+        speed = pins.map(speed, -100, 100, 0, 180);
+        extendServoControl(index, ServoType.Servo180, speed);
+    }
+
+    /**
      * Read the battery level as a percentage (0–100).
      * Tell it what battery type you are using so it can calculate correctly.
      * @param batType battery chemistry and cell count
