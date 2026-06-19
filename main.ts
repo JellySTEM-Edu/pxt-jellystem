@@ -761,7 +761,8 @@ namespace jellystem {
 
     export enum UltrasonicModel {
         //% block="HC-SR04"
-        HC_SR04 = 58,   // 58 μs per cm round-trip at sea level
+        // HC_SR04 is commented out because it is not used
+        // HC_SR04 = 58,   // 58 μs per cm round-trip at sea level
         //% block="RCWL-1601"
         RCWL_1601 = 50  // 50 μs per cm — different timing due to sensor hardware
     }
@@ -962,7 +963,7 @@ namespace jellystem {
     export function onUltrasonicObjectDetected(distance: number, unit: UltrasonicUnit, handler: () => void): void {
         if (distance <= 0) return;
         if (!ultrasonicState) {
-            ultrasonicState = { trig: undefined, model: UltrasonicModel.HC_SR04, roundTrips: [{ ts: 0, rtt: ULTRASONIC_MAX_TRAVEL_TIME }], medianRoundTrip: ULTRASONIC_MAX_TRAVEL_TIME, travelTimeObservers: [] }
+            ultrasonicState = { trig: undefined, model: UltrasonicModel.RCWL_1601, roundTrips: [{ ts: 0, rtt: ULTRASONIC_MAX_TRAVEL_TIME }], medianRoundTrip: ULTRASONIC_MAX_TRAVEL_TIME, travelTimeObservers: [] }
         }
         // Convert the threshold distance to a round-trip time in μs using the model's divisor
         let modelDivisor = ultrasonicState.model as number;
